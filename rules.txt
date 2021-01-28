@@ -1,0 +1,186 @@
+align eq Eq
+align eq.refl Eq.refl
+align eq.symm Eq.symm
+align eq.trans Eq.trans
+align eq.subst Eq.subst
+
+rename quot Quot
+rename quot.mk Quot.mk
+rename quot.lift Quot.lift
+rename quot.ind Quot.ind
+
+align id_delta idDelta
+align id_rhs idRhs
+align out_param outParam
+align opt_param optParam
+
+unchanged propext
+unchanged funext
+unchanged rfl
+unchanged absurd
+unchanged congr
+
+unchanged trivial
+unchanged id
+unchanged id.def
+
+unchanged cond
+unchanged mt
+
+unchanged std.prec.default
+unchanged implies
+unchanged implies.trans
+unchanged flip
+
+align not Not
+
+align heq HEq
+align heq.refl HEq.refl
+align heq.symm HEq.symm
+align heq.trans HEq.trans
+align heq.subst HEq.subst
+
+align unit Unit
+align unit.star Unit.unit
+align punit PUnit
+align punit.star PUnit.unit
+
+
+align prod Prod
+align prod.mk Prod.mk
+
+align pprod PProd
+align pprod.mk PProd.mk
+
+align or Or
+align or.inl Or.inl
+align or.inr Or.inr
+
+align has_add Add
+align has_add.mk Add.mk
+align has_add.add Add.add
+
+align has_sub Sub
+align has_sub.mk Sub.mk
+align has_sub.sub Sub.sub
+
+align has_mul Mul
+align has_mul.mk Mul.mk
+align has_mul.mul Mul.mul
+
+align has_neg Neg
+align has_neg.mk Neg.mk
+align has_neg.neg Neg.neg
+
+align has_div Div
+align has_div.mk Div.mk
+align has_div.div Div.div
+
+align has_mod Mod
+align has_mod.mk Mod.mk
+align has_mod.mod Mod.mod
+
+align has_le HasLessEq
+align has_le.mk HasLessEq.mk
+align has_le.le HasLessEq.LessEq
+
+align has_lt HasLess
+align has_lt.mk HasLess.mk
+align has_lt.lt HasLess.Less
+
+align has_append Append
+align has_append.mk Append.mk
+align has_append.append Append.append
+
+align has_pure Pure
+align has_pure.mk Pure.mk
+
+align has_bind Bind
+align has_bind.mk Bind.mk
+
+align functor Functor
+align functor.mk Functor.mk
+
+align and And
+align and.intro And.intro
+
+align bool Bool
+align bool.ff Bool.false
+align bool.tt Bool.true
+
+align true True
+align true.intro True.intro
+
+align false False
+
+align iff Iff
+align iff.intro Iff.intro
+
+align decidable Decidable
+align decidable.is_false Decidable.isFalse
+align decidable.is_true Decidable.isTrue
+align decidable_eq DecidableEq
+align decidable_rel DecidableRel
+
+align Exists Exists
+align Exists.intro Exists.intro
+
+align inhabited Inhabited
+align inhabited.default Inhabited.default
+align inhabited.mk Inhabited.mk
+align default Inhabited.default
+
+align classical.choice Classical.choice
+
+align nonempty Nonempty
+align nonempty.intro Nonempty.intro
+
+align le LessEq
+align lt Less
+
+align list List
+align list.nil List.nil
+align list.cons List.cons
+
+align nat Nat
+align nat.zero Nat.zero
+align nat.succ Nat.succ
+
+align nat.add Nat.add
+align nat.add._main Nat.add
+
+align nat.sub Nat.sub
+align nat.sub._main Nat.sub
+
+align nat.mul Nat.mul
+align nat.mul._main Nat.mul
+
+align nat.beq Nat.beq
+align nat.ble Nat.ble
+
+align subtype Subtype
+align subtype.mk Subtype.mk
+
+align has_sizeof SizeOf
+align has_sizeof.mk SizeOf.mk
+
+noinst bool.decidable_eq
+noinst nat.decidable_eq
+noinst nat.decidable_lt
+noinst nat.decidable_le
+noinst and.decidable
+noinst or.decidable
+noinst iff.decidable
+noinst not.decidable
+noinst implies.decidable
+noinst decidable.true
+noinst decidable.false
+noinst exists_prop_decidable
+noinst forall_prop_decidable
+
+#
+# Things that (last we checked) took too long to check or went OOM
+#
+sorry cauchy_seq_finset_of_geometric_bound
+sorry lie_module.derived_series_le_lower_central_series
+sorry has_fpower_series_at.comp
