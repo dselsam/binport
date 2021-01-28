@@ -18,11 +18,11 @@ LEAN4_PATH=./lean4/build/release/stage1/lib/lean:$(AUTO4_PATH)
 
 clearLean3:
 	find ./lean3/library -name "*olean" -delete
-	find ./lean3/library -name "*lport" -delete
+	find ./lean3/library -name "*tlean" -delete
 
 clearMathlib:
 	find ./mathlib/src -name "*olean" -delete
-	find ./mathlib/src -name "*lport" -delete
+	find ./mathlib/src -name "*tlean" -delete
 
 buildLean3:
 	LEAN_PATH=$(LEAN3_PATH) time ./lean3/bin/lean --port ./lean3/library
