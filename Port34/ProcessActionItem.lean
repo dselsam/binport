@@ -135,17 +135,41 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
   | ActionItem.decl d => do
     match d with
-    | Declaration.axiomDecl defn => do
-      let name := f defn.name
-      let type := r defn.type
+    | Declaration.axiomDecl ax => do
+      let name := f ax.name
+      let type := r ax.type
 
-      if s.ignored.contains defn.name then return ()
+      if s.ignored.contains ax.name then return ()
+      maybeRegisterEquation ax.name
 
-      addDeclLoud defn.name $ Declaration.axiomDecl {
-        defn with
+      addDeclLoud ax.name $ Declaration.axiomDecl {
+        ax with
           name := name,
           type := type
       }
+
+    | Declaration.thmDecl thm => do
+      let name  := f thm.name
+      let type  := r thm.type
+
+      if s.ignored.contains thm.name then return ()
+      maybeRegisterEquation thm.name
+
+      if s.sorries.contains thm.name ∨ ¬ (← read).proofs then
+        addDeclLoud name $ Declaration.axiomDecl {
+          thm with
+            name     := name,
+            type     := type,
+            isUnsafe := false -- TODO: what to put here?
+        }
+      else
+        let value := r thm.value
+        addDeclLoud name $ Declaration.thmDecl {
+          thm with
+            name  := name,
+            type  := type,
+            value := value
+        }
 
     | Declaration.defnDecl defn => do
       let name  := f defn.name
@@ -153,32 +177,15 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
       if s.ignored.contains defn.name then return ()
 
-      maybeRegisterEquation defn.name
-
-      if s.sorries.contains defn.name then
-        addDeclLoud name $ Declaration.axiomDecl {
-          defn with
-            name := name,
-            type := type,
-            isUnsafe := false -- TODO: what to put here?
-        }
-      else if (← liftMetaM $ Meta.isProp type) then
-        addDeclLoud defn.name $
-          if (← read).proofs then
-            let value := r defn.value
-            Declaration.thmDecl { defn with name := name, type := type, value := value }
-          else
-            Declaration.axiomDecl { defn with name := name, type := type, isUnsafe := false /- TODO -/ }
-      else
-        let value := r defn.value
-        let env ← getEnv
-        addDeclLoud defn.name $ Declaration.defnDecl {
-          defn with
-            name  := name,
-            type  := type,
-            value := value,
-            hints := defn.hints
-        }
+      let value := r defn.value
+      let env ← getEnv
+      addDeclLoud defn.name $ Declaration.defnDecl {
+        defn with
+          name  := name,
+          type  := type,
+          value := value,
+          hints := defn.hints
+      }
 
     | Declaration.inductDecl lps nps [ind] iu => do
       let name := f ind.name

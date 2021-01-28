@@ -111,16 +111,25 @@ def processLine (line : String) : PortM (List ActionItem) := do
           isUnsafe    := false,
         }]
 
-      | ("#DEF" :: n :: h :: t :: v :: ups) =>
+      | ("#DEF" :: n :: thm :: h :: t :: v :: ups) =>
         let (n, h, t, v, ups) ← ((← str2name n), (← parseHints h), (← str2expr t), (← str2expr v), (← ups.mapM str2name))
-        pure [ActionItem.decl $ Declaration.defnDecl {
-          name        := n,
-          levelParams := ups,
-          type        := t,
-          value       := v,
-          safety      := DefinitionSafety.safe, -- TODO: confirm only safe things are being exported
-          hints       := h,
-        }]
+        let thm := (← parseNat thm) > 0
+        if thm then
+          pure [ActionItem.decl $ Declaration.thmDecl {
+            name        := n,
+            levelParams := ups,
+            type        := t,
+            value       := v
+          }]
+        else
+          pure [ActionItem.decl $ Declaration.defnDecl {
+            name        := n,
+            levelParams := ups,
+            type        := t,
+            value       := v,
+            safety      := DefinitionSafety.safe, -- TODO: confirm only safe things are being exported
+            hints       := h,
+          }]
 
       | ("#IND" :: nps :: n :: t :: nis :: rest) =>
         let (nps, n, t, nis) ← ((← parseNat nps), (← str2name n), (← str2expr t), (← parseNat nis))
