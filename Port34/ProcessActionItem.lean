@@ -156,7 +156,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       maybeRegisterEquation thm.name
 
       if s.sorries.contains thm.name ∨ ¬ (← read).proofs then
-        addDeclLoud name $ Declaration.axiomDecl {
+        addDeclLoud thm.name $ Declaration.axiomDecl {
           thm with
             name     := name,
             type     := type,
@@ -164,7 +164,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
         }
       else
         let value := r thm.value
-        addDeclLoud name $ Declaration.thmDecl {
+        addDeclLoud thm.name $ Declaration.thmDecl {
           thm with
             name  := name,
             type  := type,
