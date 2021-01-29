@@ -4,6 +4,8 @@ import Mathlib.field_theory.mv_polynomial
 import Mathlib.algebraic_geometry.prime_spectrum
 import PostPort.Numbers
 
+set_option synthInstance.maxHeartbeats 50000
+
 namespace Mathlib
 
 syntax "{ " ident (" : " term)? " | " term " }" : term
@@ -11,10 +13,6 @@ syntax "{ " ident (" : " term)? " | " term " }" : term
 macro_rules
   | `({ $x : $type | $p }) => `(Mathlib.set_of fun ($x:ident : $type) => $p)
   | `({ $x | $p })         => `(Mathlib.set_of fun ($x:ident : _) => $p)
-
--- TODO: need to set `:max` when porting singletons
-notation:max "⊤" => has_top.top
-notation:max "⊥" => has_bot.bot
 
 universes u v w
 
@@ -41,7 +39,6 @@ theorem zero_locus_bot : zero_locus (⊥ : ideal (mv_polynomial σ k)) = ⊤ :=
 
 theorem zero_locus_top : zero_locus (⊤ : ideal (mv_polynomial σ k)) = ⊥ :=
   sorry
-
 
 end mv_polynomial
 end Mathlib

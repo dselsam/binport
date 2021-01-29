@@ -4,12 +4,12 @@ import Mathlib.analysis.normed_space.add_torsor
 import Mathlib.data.matrix.notation
 import Mathlib.linear_algebra.affine_space.finite_dimensional
 import Mathlib.tactic.fin_cases
+import Mathlib.data.real.basic
 import PostPort.Numbers
 
 namespace Mathlib
 
--- TODO: fix precedence during porting
-notation:max "ℝ" => real
+-- TODO: how to port locales?
 notation:max "π" => real.pi
 
 namespace inner_product_geometry
