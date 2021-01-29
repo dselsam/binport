@@ -158,6 +158,10 @@ align nat.mul._main Nat.mul
 align nat.beq Nat.beq
 align nat.ble Nat.ble
 
+align int Int
+align int.of_nat Int.ofNat
+align int.neg_succ_of_nat Int.negSucc
+
 align subtype Subtype
 align subtype.mk Subtype.mk
 
@@ -177,6 +181,7 @@ noinst decidable.true
 noinst decidable.false
 noinst exists_prop_decidable
 noinst forall_prop_decidable
+noinst int.decidable_eq
 
 #
 # Things that (last we checked) took too long to check or went OOM
