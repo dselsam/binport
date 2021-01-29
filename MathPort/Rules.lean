@@ -3,13 +3,13 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam, Gabriel Ebner
 -/
-import Port34.Util
-import Port34.Basic
+import MathPort.Util
+import MathPort.Basic
 import Lean
 import Std.Data.HashSet
 import Std.Data.HashMap
 
-namespace Port34
+namespace MathPort
 
 open Lean
 open Std (HashSet mkHashSet HashMap mkHashMap)

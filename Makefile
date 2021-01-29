@@ -1,13 +1,13 @@
-PKG = Port34
+PKG = MathPort
 include ./lean4/build/release/stage1/share/lean/lean.mk
-all: port34
+all: mathport
 
-EXE=port34
+EXE=mathport
 
-port34: $(BIN_OUT)/test
+mathport: $(BIN_OUT)/test
 	cp $(BIN_OUT)/test $(EXE)
 
-$(BIN_OUT)/test: $(LIB_OUT)/libPort34.a $(CPP_OBJS) | $(BIN_OUT)
+$(BIN_OUT)/test: $(LIB_OUT)/libMathPort.a $(CPP_OBJS) | $(BIN_OUT)
 	c++ -rdynamic -o $@ $^ `leanc -print-ldflags`
 
 .PHONY: clearLean3 clearMathlib buildLean3 buildMathlib unportLean3 unportMathlib portLean3 portMathlib portMathlibFast

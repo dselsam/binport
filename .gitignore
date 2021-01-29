@@ -1,6 +1,6 @@
 build
 lean3
 lean4
-port34
+mathport
 *.olean
 *.tlean

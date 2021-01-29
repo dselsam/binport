@@ -1,4 +1,4 @@
-`port34` is a tool for building lean4 `.olean` files from lean3 `.tlean` files.
+`mathport` is a tool for building lean4 `.olean` files from lean3 `.tlean` files.
 
 # Status
 
@@ -10,29 +10,29 @@ but most are still very cumbersome to elaborate due to a myriad of differences b
 
 The most recent release contains lean4 `.olean` files for all of mathlib.
 When extracted, it will populate directories `Lib4/Lean3Lib`, `Lib4/Lean3Pkg`, and `Lib4/Mathlib`.
-See [Lib4/Examples](https://github.com/dselsam/port34/tree/master/Lib4/Examples) for a few barebones examples that build on these `.olean` files.
+See [Lib4/Examples](https://github.com/dselsam/mathport/tree/master/Lib4/Examples) for a few barebones examples that build on these `.olean` files.
 Note that there are many issues still and the experience may not be pleasant yet.
-For now these examples will only be tested with [this branch of lean4](https://github.com/dselsam/lean4/tree/port34).
+For now these examples will only be tested with [this branch of lean4](https://github.com/dselsam/lean4/tree/mathport).
 
 # Running the pipeline
 
 The following instructions are for developers who want to experiment with different porting strategies.
 
-- Build [this branch of lean3](https://github.com/dselsam/lean/tree/port34) in directory `./lean3`.
+- Build [this branch of lean3](https://github.com/dselsam/lean/tree/mathport) in directory `./lean3`.
   - generate `library/all.lean`
 
 - Download a compatible version of [mathlib](https://github.com/leanprover-community/mathlib) in directory `./mathlib`.
-  - i.e. one that uses the same version of lean3 that the `port34` branch builds on
-  - we will test the pipeline on [this branch of mathlib](https://github.com/dselsam/mathlib/tree/port34)
+  - i.e. one that uses the same version of lean3 that the `mathport` branch builds on
+  - we will test the pipeline on [this branch of mathlib](https://github.com/dselsam/mathlib/tree/mathport)
   - generate `src/all.lean`
 
-- Build [this branch of lean4](https://github.com/dselsam/lean4/tree/port34) in directory `./lean4`.
+- Build [this branch of lean4](https://github.com/dselsam/lean4/tree/mathport) in directory `./lean4`.
 
-- `make` should now produce the executable `port34`.
+- `make` should now produce the executable `mathport`.
 
 - To port, use the following commands (for "lib" in [`Lean3`, `Mathlib`]):
   - `make clear<lib>`: removes `.olean` and `.tlean` files
   - `make build<lib>`: builds `.olean` and `.tlean` files
   - `make unport<lib>`: removes lean4 `.olean` files
   - `make port<lib>`: generates lean4 `.olean` files
-  - see [Makefile](https://github.com/dselsam/port34/blob/master/Makefile) for details.
+  - see [Makefile](https://github.com/dselsam/mathport/blob/master/Makefile) for details.

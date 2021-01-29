@@ -3,13 +3,13 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam
 -/
-import Port34.Util
-import Port34.Path
+import MathPort.Util
+import MathPort.Path
 import Lean
 import Std.Data.HashSet
 import Std.Data.HashMap
 
-namespace Port34
+namespace MathPort
 
 open Lean
 
@@ -77,4 +77,4 @@ def ActionItem.toDecl : ActionItem → Name
 
 
 
-end Port34
+end MathPort

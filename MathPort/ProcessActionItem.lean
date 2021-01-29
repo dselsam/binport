@@ -3,14 +3,14 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam, Gabriel Ebner
 -/
-import Port34.Util
-import Port34.Basic
-import Port34.ActionItem
-import Port34.Rules
-import Port34.OldRecursor
+import MathPort.Util
+import MathPort.Basic
+import MathPort.ActionItem
+import MathPort.Rules
+import MathPort.OldRecursor
 import Lean
 
-namespace Port34
+namespace MathPort
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Command
 
@@ -225,4 +225,4 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
     | _ => throwError $ toString d.names
 
-end Port34
+end MathPort

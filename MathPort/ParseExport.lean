@@ -3,14 +3,14 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam, Gabriel Ebner
 -/
-import Port34.Util
-import Port34.Basic
-import Port34.ActionItem
+import MathPort.Util
+import MathPort.Basic
+import MathPort.ActionItem
 import Lean
 import Std.Data.HashSet
 import Std.Data.HashMap
 
-namespace Port34
+namespace MathPort
 
 open Lean
 
@@ -221,4 +221,4 @@ def processLine (line : String) : PortM (List ActionItem) := do
       | "#BC" => BinderInfo.instImplicit
       | s     => throwError s!"[parseBinderInfo] unexpected: {s}"
 
-end Port34
+end MathPort
