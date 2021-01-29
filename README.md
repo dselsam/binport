@@ -16,10 +16,15 @@ For now these examples will only be tested with [this branch of lean4](https://g
 
 # Running the pipeline
 
+The following instructions are for developers who want to experiment with different porting strategies.
+
 - Build [this branch of lean3](https://github.com/dselsam/lean/tree/port34) in directory `./lean3`.
+  - generate `library/all.lean`
 
 - Download a compatible version of [mathlib](https://github.com/leanprover-community/mathlib) in directory `./mathlib`.
   - i.e. one that uses the same version of lean3 that the `port34` branch builds on
+  - we will test the pipeline on [this branch of mathlib](https://github.com/dselsam/mathlib/tree/port34)
+  - generate `src/all.lean`
 
 - Build [this branch of lean4](https://github.com/dselsam/lean4/tree/port34) in directory `./lean4`.
 
