@@ -1,4 +1,6 @@
-./build/
+build
+lean3
+lean4
 port34
 *.olean
 *.tlean
