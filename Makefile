@@ -12,7 +12,7 @@ $(BIN_OUT)/test: $(LIB_OUT)/libMathPort.a $(CPP_OBJS) | $(BIN_OUT)
 
 .PHONY: clearLean3 clearMathlib buildLean3 buildMathlib unportLean3 unportMathlib portLean3 portMathlib portMathlibFast
 
-AUTO4_PATH=./lib4/auto
+AUTO4_PATH=./Lib4
 LEAN3_PATH=./lean3/library:./lean3:leanpkg:./mathlib/src
 LEAN4_PATH=./lean4/build/release/stage1/lib/lean:$(AUTO4_PATH)
 
