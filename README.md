@@ -14,6 +14,11 @@ See [Lib4/Examples](https://github.com/dselsam/mathport/tree/master/Lib4/Example
 Note that there are many issues still and the experience may not be pleasant yet.
 For now these examples will only be tested with [this branch of lean4](https://github.com/dselsam/lean4/tree/mathport).
 
+# Contributing
+
+The best way to help is to find and isolate issues. Pick your favorite mathlib file, start reimplementing it in Lean4,
+and file (small, isolated) GitHub issues for any specific pain points you encounter.
+
 # Running the pipeline
 
 The following instructions are for developers who want to experiment with different porting strategies.
