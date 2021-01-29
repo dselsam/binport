@@ -1,12 +1,8 @@
 import Mathlib.analysis.normed_space.basic
 import Mathlib.topology.local_homeomorph
+import PostPort.Numbers
 
 namespace Mathlib
-
-universe u
-
-noncomputable instance {α : Type u} [has_zero α] : OfNat α (noindex! 0) := ⟨has_zero.zero⟩
-noncomputable instance {α : Type u} [has_one α]  : OfNat α (noindex! 1) := ⟨has_one.one⟩
 
 open filter
 open set

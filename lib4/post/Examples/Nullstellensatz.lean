@@ -2,6 +2,7 @@ import Mathlib.ring_theory.jacobson
 import Mathlib.field_theory.algebraic_closure
 import Mathlib.field_theory.mv_polynomial
 import Mathlib.algebraic_geometry.prime_spectrum
+import PostPort.Numbers
 
 namespace Mathlib
 
@@ -16,9 +17,6 @@ notation:max "⊤" => has_top.top
 notation:max "⊥" => has_bot.bot
 
 universes u v w
-
-noncomputable instance {α : Type u} [has_zero α] : OfNat α (noindex! 0) := ⟨has_zero.zero⟩
-noncomputable instance {α : Type u} [has_one α]  : OfNat α (noindex! 1) := ⟨has_one.one⟩
 
 open ideal
 
