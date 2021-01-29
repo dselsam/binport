@@ -57,9 +57,9 @@ def MODULES : Array ModuleInfo := #[
   ModuleInfo.mk "Lean3Pkg" "lean3/leanpkg"
 ]
 
-def ROOT4 : String := "lib4/auto"
+def Lib4Path : String := "Lib4"
 
-def LEAN4LIBPATH : String := "lean4/build/release/stage1/lib/lean"
+def Lean4LibPath : String := "lean4/build/release/stage1/lib/lean"
 -------------------------------
 -- END CONFIG
 -------------------------------
@@ -74,7 +74,7 @@ def Path34.toLean4dot (p : Path34) : String :=
   ".".intercalate [p.modInfo.l4name, p.mrpath.toDotPath.path]
 
 def Path34.toLean4path (p : Path34) (suffix : String) : String :=
-  System.mkFilePath [ROOT4, p.modInfo.l4name, p.mrpath.path] ++ suffix
+  System.mkFilePath [Lib4Path, p.modInfo.l4name, p.mrpath.path] ++ suffix
 
 def Path34.toLean4olean (p : Path34) : String := p.toLean4path ".olean"
 

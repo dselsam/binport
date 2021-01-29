@@ -98,7 +98,7 @@ end Run
 open Run
 
 unsafe def run (proofs : Bool) (target : Path34) : IO Unit := do
-  initSearchPath "./lean4/build/release/stage1/lib/lean/:./lib4/auto"
+  initSearchPath s!"{Lean4LibPath}:{Lib4Path}"
   let job ← (visit target) { proofs := proofs } |>.run' (s := {})
   let result ← IO.wait job
   match result with
