@@ -34,7 +34,6 @@ def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : P
   let prio : Nat := (← liftMacroM <| evalOptPrio none).pred
 
   let stxPrec  : Option Syntax := Syntax.mkNumLit (toString prec)
-  let stxPrec2 : Option Syntax := stxPrec
   let stxName  : Option Syntax := none
   let stxPrio  : Option Syntax := quote prio
   let stxOp    : Syntax := Syntax.mkStrLit tok
@@ -51,7 +50,8 @@ def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : P
     | MixfixKind.postfix =>
       `(postfix $[: $stxPrec]? $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
     | MixfixKind.singleton =>
-      `(notation $[: $stxPrec]? $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
+      let correctPrec : Option Syntax := Syntax.mkNumLit (toString Parser.maxPrec)
+      `(notation $[: $correctPrec]? $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
 
   println! s!"syntax:\n\n{Lean.Elab.Frontend.showSyntax stx}"
   elabCommand stx
