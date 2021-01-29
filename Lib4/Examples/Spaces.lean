@@ -26,10 +26,10 @@ noncomputable def grothendieck_topology : @grothendieck_topology (opens T) (preo
   transitive' := sorry
 }
 
--- TODO: the *type* of the following definition triggers the error of Meta/SynthInstance.lean:L193
--- which means that some instance that gets tried is not recognized as a class.
--- This is expected since we are currently discarding `@[class] def ...` annotations entirely
--- (Lean4 only permits structures to be classes)
+-- TODO: the type of the following definition triggers the error of Meta/SynthInstance.lean:L193
+-- because `category_theory.limits.has_finite_wide_pullbacks` is not reducible.
+-- In Lean3, it would presumably be unfolded until reaching a class, but it is not currently in Lean4.
+
 #exit
 noncomputable def pretopology : @pretopology (opens T) (preorder.small_category _) sorry := {
   coverings := λ (X : topological_space.opens T) (R : category_theory.presieve X) =>
