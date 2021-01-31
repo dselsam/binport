@@ -50,6 +50,15 @@ structure ExportDecl : Type where
   renames : Array (Name × Name)
   exceptNames : Array Name
 
+structure ProjectionInfo : Type where
+  -- pr_i A.. (mk A f_1 ... f_n) ==> f_i
+  projName  : Name -- pr_i
+  ctorName  : Name -- mk
+  nParams   : Nat  -- |A..|
+  index     : Nat  -- i
+  fromClass : Bool
+  deriving Repr
+
 inductive ActionItem : Type
 | decl           : Declaration → ActionItem
 | «class»        : (c : Name) → ActionItem
@@ -60,6 +69,7 @@ inductive ActionItem : Type
 | «reducibility» : (name : Name) → ReducibilityStatus → ActionItem
 | «mixfix»       : MixfixKind → Name → Nat → String → ActionItem
 | «export»       : ExportDecl → ActionItem
+| «projection»   : ProjectionInfo → ActionItem
 
 def ActionItem.toDecl : ActionItem → Name
   | ActionItem.decl d =>
@@ -74,7 +84,6 @@ def ActionItem.toDecl : ActionItem → Name
   | ActionItem.reducibility n _   => n
   | ActionItem.mixfix _ n _ _     => n
   | ActionItem.export _           => `inExport
-
-
+  | ActionItem.projection p        => p.projName
 
 end MathPort

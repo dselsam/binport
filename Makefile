@@ -2,19 +2,21 @@ PKG = MathPort
 include ./lean4/build/release/stage1/share/lean/lean.mk
 all: mathport
 
-EXE=mathport
+MathPortEXE=mathport
+Lean4Exe=
+LIB4=./Lib4
+LEAN3_PATH=./lean3/library:./lean3/leanpkg:./mathlib/src
+LEAN4_PATH=./lean4/build/release/stage1/lib/lean:$(LIB4)
+
 
 mathport: $(BIN_OUT)/test
-	cp $(BIN_OUT)/test $(EXE)
+	cp $(BIN_OUT)/test $(MathPortEXE)
 
 $(BIN_OUT)/test: $(LIB_OUT)/libMathPort.a $(CPP_OBJS) | $(BIN_OUT)
 	c++ -rdynamic -o $@ $^ `leanc -print-ldflags`
 
-.PHONY: clearLean3 clearMathlib buildLean3 buildMathlib unportLean3 unportMathlib portLean3 portMathlib portMathlibFast
 
-AUTO4_PATH=./Lib4
-LEAN3_PATH=./lean3/library:./lean3:leanpkg:./mathlib/src
-LEAN4_PATH=./lean4/build/release/stage1/lib/lean:$(AUTO4_PATH)
+.PHONY: clearLean3 clearMathlib buildLean3 buildMathlib unportLean3 unportMathlib portLean3 portMathlib portMathlibFast
 
 clearLean3:
 	find ./lean3/library -name "*olean" -delete
@@ -25,29 +27,31 @@ clearMathlib:
 	find ./mathlib/src -name "*tlean" -delete
 
 buildLean3:
-	LEAN_PATH=$(LEAN3_PATH) time ./lean3/bin/lean --port ./lean3/library
+	LEAN_PATH=$(LEAN3_PATH) time ./lean3/bin/lean --make --tlean ./lean3/library
+	LEAN_PATH=$(LEAN3_PATH) time ./lean3/bin/lean --make --tlean ./lean3/leanpkg
 
 buildMathlib:
-	LEAN_PATH=$(LEAN3_PATH) time ./lean3/bin/lean --port ./mathlib/src
+	LEAN_PATH=$(LEAN3_PATH) time ./lean3/bin/lean --make --tlean ./mathlib/src
 
 unportLean3:
-	find $(AUTO4_PATH)/Lean3Lib -name "*.olean" -delete
-	find $(AUTO4_PATH)/Lean3Lib -name "*.lean" -delete
-	find $(AUTO4_PATH)/Lean3Pkg -name "*.olean" -delete
-	find $(AUTO4_PATH)/Lean3Pkg -name "*.lean" -delete
+	rm -rf $(LIB4)/Lean3Lib $(LIB4)/Lean3Pkg
 
 unportMathlib:
-	find $(AUTO4_PATH)/Mathlib -name "*.olean" -delete
-	find $(AUTO4_PATH)/Mathlib -name "*.lean" -delete
+	rm -rf $(LIB4)/Mathlib
 
-portLean3:
-	LEAN_PATH=$(LEAN4_PATH) time ./$(EXE) 1 lean3
+# TODO: simulate Lean3's `--make`
+preport:
+	LEAN_PATH=$(LEAN4_PATH) time ./lean4/build/release/stage1/bin/lean --o=$(LIB4)/PrePort/Numbers.olean $(LIB4)/PrePort/Numbers.lean
+	LEAN_PATH=$(LEAN4_PATH) time ./lean4/build/release/stage1/bin/lean --o=$(LIB4)/PrePort.olean $(LIB4)/PrePort.lean
 
-portMathlib:
-	LEAN_PATH=$(LEAN4_PATH) time ./$(EXE) 1 mathlib
+portLean3: preport
+	LEAN_PATH=$(LEAN4_PATH) time ./$(MathPortEXE) 1 lean3
+
+portMathlib: preport
+	LEAN_PATH=$(LEAN4_PATH) time ./$(MathPortEXE) 1 mathlib
 
 portLean3Fast:
-	LEAN_PATH=$(LEAN4_PATH) time ./$(EXE) 0 lean3
+	LEAN_PATH=$(LEAN4_PATH) time ./$(MathPortEXE) 0 lean3
 
 portMathlibFast:
-	LEAN_PATH=$(LEAN4_PATH) time ./$(EXE) 0 mathlib
+	LEAN_PATH=$(LEAN4_PATH) time ./$(MathPortEXE) 0 mathlib

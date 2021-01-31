@@ -45,7 +45,6 @@ align unit.star Unit.unit
 align punit PUnit
 align punit.star PUnit.unit
 
-
 align prod Prod
 align prod.mk Prod.mk
 
@@ -183,9 +182,25 @@ noinst exists_prop_decidable
 noinst forall_prop_decidable
 noinst int.decidable_eq
 
+neversorry of_as_true
+
 #
 # Things that (last we checked) took too long to check or went OOM
 #
 sorry cauchy_seq_finset_of_geometric_bound
 sorry lie_module.derived_series_le_lower_central_series
 sorry has_fpower_series_at.comp
+
+#
+# Things that are added in PrePort
+
+align bit0 Mathlib.PrePort.bit0
+align bit1 Mathlib.PrePort.bit1
+
+align has_zero Mathlib.PrePort.HasZero
+align has_zero.zero Mathlib.PrePort.HasZero.zero
+align has_zero.mk Mathlib.PrePort.HasZero.mk
+
+align has_one Mathlib.PrePort.HasOne
+align has_one.one Mathlib.PrePort.HasOne.one
+align has_one.mk Mathlib.PrePort.HasOne.mk

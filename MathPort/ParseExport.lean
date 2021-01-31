@@ -34,6 +34,14 @@ private def parseNat (s : String) : PortM Nat :=
   | some k => pure k
   | none   => throwError s!"String '{s}' cannot be converted to Nat"
 
+private def parseBool (s : String) : PortM Bool :=
+  match s.toNat? with
+  | some k =>
+    if k == 1 then true
+    else if k == 0 then false
+    else throwError s!"String '{s}' cannot be converted to Bool"
+  | none            => throwError s!"String '{s}' cannot be converted to Bool"
+
 private def parseHints (s : String) : PortM ReducibilityHints := do
   match s with
   | "A" => ReducibilityHints.abbrev
@@ -173,6 +181,15 @@ def processLine (line : String) : PortM (List ActionItem) := do
       | ("#NOCONF" :: _)                         => pure []
       | ("#TOKEN" :: _)                          => pure []
       | ("#USER_ATTR" :: _)                      => pure []
+
+      | ["#PROJECTION", proj, mk, nParams, i, ii] => do
+        pure [ActionItem.projection {
+          projName     := ← str2name proj,
+          ctorName     := ← str2name mk,
+          nParams      := ← parseNat nParams,
+          index        := ← parseNat i,
+          fromClass    := ← parseBool ii
+        }]
 
       | ("#EXPORT_DECL" :: currNs :: ns :: nsAs :: hadExplicit :: nRenames :: rest) => do
         let rest := rest.toArray

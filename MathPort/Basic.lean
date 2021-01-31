@@ -24,10 +24,11 @@ structure ExportInfo where
   exprs  : Array Expr        := #[]
 
 structure Rules where
-  newNames  : HashMap Name Name := {}
-  ignored   : HashSet Name      := {}
-  sorries   : HashSet Name      := {}
-  noInsts   : HashSet Name      := {}
+  newNames     : HashMap Name Name := {}
+  ignored      : HashSet Name      := {}
+  sorries      : HashSet Name      := {}
+  neverSorries : HashSet Name      := {} -- e.g. of_as_true
+  noInsts      : HashSet Name      := {}
 
 structure State extends ExportInfo, Rules where
   decl           : Name                     := `unknown

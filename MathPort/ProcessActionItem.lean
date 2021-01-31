@@ -7,6 +7,7 @@ import MathPort.Util
 import MathPort.Basic
 import MathPort.ActionItem
 import MathPort.Rules
+import MathPort.Translate
 import MathPort.OldRecursor
 import Lean
 
@@ -14,11 +15,29 @@ namespace MathPort
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Command
 
+def shouldGenCodeFor (d : Declaration) : Bool :=
+  -- TODO: sadly, noncomputable comes after the definition
+  -- (so if this isn't good enough, we will need to refactor)
+  match d with
+  | Declaration.defnDecl _ => true
+  | _                      => false
+
 def addDeclLoud (n : Name) (d : Declaration) : PortM Unit := do
   let path := (← read).path
   println! "[addDecl] START {path.mrpath.path} {n}"
+  if n == `module.End.eigenvectors_linear_independent then
+    match d with
+    | Declaration.thmDecl d => println! "[fail] {d.type} \n\n\n\n{d.value}"
+    | _ => pure ()
   addDecl d
   println! "[addDecl] END   {path.mrpath.path} {n}"
+  if shouldGenCodeFor d then
+    match (← getEnv).compileDecl {} d with
+    | Except.ok env    => println! "[compile] {n} SUCCESS!"
+                          setEnv env
+    | Except.error err => let msg ← err.toMessageData (← getOptions)
+                          let msg ← msg.toString
+                          println! "[compile] {n} {msg}"
 
 def setAttr (attr : Attribute) (declName : Name) : PortM Unit := do
   let env ← getEnv
@@ -72,8 +91,7 @@ def tryAddSimpLemma (n : Name) (prio : Nat) : PortM Unit :=
 def processActionItem (actionItem : ActionItem) : PortM Unit := do
   modify λ s => { s with decl := actionItem.toDecl }
   let s ← get
-  let f n := newName s n
-  let r (e : Expr) := e.replaceConstNames f
+  let f n := translateName s (← getEnv) n
 
   match actionItem with
   | ActionItem.export d => do
@@ -108,6 +126,10 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       try setAttr { name := `reducible } (f n)
       catch ex => warn ex
 
+  | ActionItem.projection proj => do
+    println! "[projection] {reprStr proj}"
+    setEnv $ addProjectionFnInfo (← getEnv) (f proj.projName) (f proj.ctorName) proj.nParams proj.index proj.fromClass
+
   | ActionItem.class n => do
     let env ← getEnv
     if s.ignored.contains n then return ()
@@ -137,7 +159,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     match d with
     | Declaration.axiomDecl ax => do
       let name := f ax.name
-      let type := r ax.type
+      let type ← translate ax.type
 
       if s.ignored.contains ax.name then return ()
       maybeRegisterEquation ax.name
@@ -149,13 +171,13 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       }
 
     | Declaration.thmDecl thm => do
-      let name  := f thm.name
-      let type  := r thm.type
+      let name := f thm.name
+      let type ← translate thm.type
 
       if s.ignored.contains thm.name then return ()
       maybeRegisterEquation thm.name
 
-      if s.sorries.contains thm.name ∨ ¬ (← read).proofs then
+      if s.sorries.contains thm.name ∨ (¬ (← read).proofs ∧ ¬ s.neverSorries.contains thm.name) then
         addDeclLoud thm.name $ Declaration.axiomDecl {
           thm with
             name     := name,
@@ -163,7 +185,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
             isUnsafe := false -- TODO: what to put here?
         }
       else
-        let value := r thm.value
+        let value ← translate thm.value
         addDeclLoud thm.name $ Declaration.thmDecl {
           thm with
             name  := name,
@@ -172,12 +194,14 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
         }
 
     | Declaration.defnDecl defn => do
-      let name  := f defn.name
-      let type  := r defn.type
+      let name := f defn.name
+      let type ← translate defn.type
+
+      println! "[defn] {name} {type}"
 
       if s.ignored.contains defn.name then return ()
 
-      let value := r defn.value
+      let value ← translate defn.value
       let env ← getEnv
       addDeclLoud defn.name $ Declaration.defnDecl {
         defn with
@@ -189,39 +213,24 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
     | Declaration.inductDecl lps nps [ind] iu => do
       let name := f ind.name
-      let type := r ind.type
-      if not (s.ignored.contains ind.name) then
-        addDeclLoud ind.name $ Declaration.inductDecl lps nps
-          [{ ind with
-              name := name,
-              type := type,
-              ctors := ind.ctors.map (fun ctor => { ctor with name := f ctor.name, type := r ctor.type })
-          }]
-          iu
+      let type ← translate ind.type
 
-      -- TODO: for now we *always* create `<ind>._oldrec` even if the recursor is unchanged
-      -- This is more expedient since now name substitution is cheap even without
-      -- task-global state.
+      if not (s.ignored.contains ind.name) then
+        -- TODO: why do I need this nested do? Because of the scope?
+        let ctors ← ind.ctors.mapM fun (ctor : Constructor) => do
+          let cname := f ctor.name
+          let ctype ← translate ctor.type
+          pure { ctor with name := cname, type := ctype }
+        addDeclLoud ind.name $ Declaration.inductDecl lps nps
+          [{ ind with name := name, type := type, ctors := ctors }] iu
+
       let oldRecName := mkOldRecName (f ind.name)
       let oldRec ← liftMetaM $ mkOldRecursor (f ind.name) oldRecName
       match oldRec with
       | some oldRec => do
         addDeclLoud oldRecName oldRec
         setAttr { name := `reducible } oldRecName
-      | none        => do
-        let env ← getEnv
-        match env.find? $ name ++ "rec" with
-        | none => throwError s!"rec for {f ind.name} not found!"
-        | some cinfo => do
-          addDeclLoud oldRecName $ Declaration.defnDecl {
-               name        := oldRecName,
-               levelParams := cinfo.lparams,
-               type        := cinfo.type,
-               value       := mkConst cinfo.name $ cinfo.lparams.map mkLevelParam,
-               safety      := DefinitionSafety.safe,
-               hints       := ReducibilityHints.abbrev,
-          }
-          setAttr { name := `reducible } oldRecName
+      | none => pure ()
 
     | _ => throwError $ toString d.names
 

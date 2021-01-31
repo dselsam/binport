@@ -1,6 +1,5 @@
 import Mathlib.analysis.normed_space.basic
 import Mathlib.topology.local_homeomorph
-import PostPort.Numbers
 
 namespace Mathlib
 

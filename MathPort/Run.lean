@@ -60,12 +60,13 @@ def genOLeanFor (proofs : Bool) (target : Path34) : IO Unit := do
   println! s!"[genOLeanFor] START {target.mrpath.path}"
   createDirectoriesIfNotExists target.toLean4olean
 
-  let imports : List Import := [{ module := `Init : Import }]
+  let imports : List Import := [{ module := `Init : Import }, { module := `PrePort : Import }]
     ++ (← parseTLeanImports target).map fun path => { module := parseName path.toLean4dot }
 
   withImportModulesConst imports (opts := {}) (trustLevel := 0) $ λ env₀ => do
     let env₀ := env₀.setMainModule target.mrpath.toDotPath.path
     let _ ← PortM.toIO (ctx := { proofs := proofs, path := target }) (env := env₀) do
+      Elab.Command.setOption `pp.all $ DataValue.ofBool true
       parseRules rulesFilename
       IO.FS.withFile target.toTLean IO.FS.Mode.read fun h => do
        let _ ← h.getLine -- discard imports
@@ -74,6 +75,7 @@ def genOLeanFor (proofs : Bool) (target : Path34) : IO Unit := do
          if line == "" then continue
          for actionItem in (← processLine line) do
            processActionItem actionItem
+
       let env ← getEnv
       writeModule env target.toLean4olean
       println! s!"[genOLeanFor] END   {target.mrpath.path}"

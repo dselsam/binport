@@ -23,6 +23,7 @@ def parseRules (rulesFilename : String) : PortM Unit :=
       | ["unchanged", n]   => unchanged (parseName n)
       | ["rename", n₁, n₂] => rename (parseName n₁) (parseName n₂)
       | ["sorry", n]       => addSorry (parseName n)
+      | ["neversorry", n]  => addNeverSorry (parseName n)
       | ["noinst", n]      => addNoInst (parseName n)
       | [""]               => pure ()
       | tokens             => throwError s!"[loadRules] unexpected: '{tokens}'"
@@ -40,16 +41,8 @@ def parseRules (rulesFilename : String) : PortM Unit :=
       addSorry (n : Name) := modify $ λ s =>
         { s with sorries := s.sorries.insert n }
 
+      addNeverSorry (n : Name) := modify $ λ s =>
+        { s with sorries := s.neverSorries.insert n }
+
       addNoInst (n : Name) := modify $ λ s =>
         { s with noInsts := s.noInsts.insert n }
-
-
-partial def newName (s : State) (n : Name) : Name := do
-  match s.newNames.find? n with
-  | some new => new
-  | none     =>
-    if n.isStr && n.getString! == "rec" && not n.getPrefix.isAnonymous then
-      let newIndName := newName s n.getPrefix
-      mkOldRecName newIndName
-    else
-      `Mathlib ++ n

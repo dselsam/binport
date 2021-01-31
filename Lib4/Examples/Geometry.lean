@@ -5,7 +5,6 @@ import Mathlib.data.matrix.notation
 import Mathlib.linear_algebra.affine_space.finite_dimensional
 import Mathlib.tactic.fin_cases
 import Mathlib.data.real.basic
-import PostPort.Numbers
 
 namespace Mathlib
 
