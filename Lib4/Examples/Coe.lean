@@ -26,8 +26,8 @@ variable {f g : {f : α → β // continuous f }}
 
 variable (x : α)
 
--- Currently, the original instance will not be found because `noindex!` is missing.
-noncomputable instance has_coe_continuous_noindex : has_coe_to_fun (noindex! {f : α → β // continuous f}) :=  ⟨_, subtype.val⟩
+-- TODO: why isn't this Mathlib instance being found?
+noncomputable instance has_coe_continuous : has_coe_to_fun {f : α → β // continuous f} :=  ⟨_, subtype.val⟩
 
 #check f x
 
