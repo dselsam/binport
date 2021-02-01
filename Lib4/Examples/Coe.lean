@@ -26,7 +26,6 @@ variable {f g : {f : α → β // continuous f }}
 
 variable (x : α)
 
--- TODO: why isn't this Mathlib instance being found?
 noncomputable instance has_coe_continuous : has_coe_to_fun {f : α → β // continuous f} :=  ⟨_, subtype.val⟩
 
 #check f x
