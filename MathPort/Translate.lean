@@ -61,7 +61,7 @@ def translate (e : Expr) : PortM Expr := do
 
     translateNumbers s e : MetaM TransformStep :=
       match Number.toNumInfo e with
-      | none   => TransformStep.done e
+      | none   => TransformStep.visit e
       | some info@⟨n, level, type, hasZero?, hasOne?, hasAdd?⟩ => do
         if ← isRegularNat s (← getEnv) info then
           check e $ mkNatLit n
