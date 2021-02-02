@@ -36,6 +36,9 @@ def DotPath.toModRelPath (p : DotPath) : ModRelPath :=
 def ModRelPath.toDotPath (p : ModRelPath) : DotPath :=
   ⟨".".intercalate $ p.path.splitOn "/"⟩
 
+def ModRelPath.toUnderscorePath (p : ModRelPath) : String :=
+  ".".intercalate $ p.path.splitOn "_"
+
 -- Example: Mathlib mathlib/src
 structure ModuleInfo where
   l4name : String

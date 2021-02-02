@@ -46,8 +46,6 @@ def setAttr (attr : Attribute) (declName : Name) : PortM Unit := do
   | Except.ok attrImpl  => liftMetaM $ attrImpl.add declName attr.stx attr.kind
 
 def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : PortM Unit := do
-  let path := (← read).path
-
   -- For now, we avoid the `=` `=` clash by making all Mathlib notations
   -- lower priority than the Lean4 ones.
   let prio : Nat := (← liftMacroM <| evalOptPrio none).pred
@@ -72,6 +70,10 @@ def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : P
       let correctPrec : Option Syntax := Syntax.mkNumLit (toString Parser.maxPrec)
       `(notation $[: $correctPrec]? $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
 
+  let nextIdx : Nat ← (← get).nNotations
+  modify λ s => { s with nNotations := nextIdx + 1 }
+  let ns : Syntax := mkIdent $ s!"{(← read).path.mrpath.toUnderscorePath}_{nextIdx}"
+  let stx ← `(namespace $ns:ident $stx end $ns:ident)
   elabCommand stx
 
 def maybeRegisterEquation (n : Name) : PortM Unit := do
