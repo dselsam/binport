@@ -14,9 +14,17 @@ import MathPort.OldRecursor
 import Lean
 
 namespace MathPort
-namespace Number
 
 open Lean
+
+partial def isConcreteNat? (e : Expr) : Option Nat :=
+  if e.isConstOf `Nat.zero then
+    some 0
+  else if e.isAppOfArity `Nat.succ 1 then do
+    let n ← isConcreteNat? e.appArg!
+    some (n+1)
+  else
+    none
 
 structure NumInfo where
   number   : Nat
@@ -26,7 +34,7 @@ structure NumInfo where
   hasOne?  : Option Expr := none
   hasAdd?  : Option Expr := none
 
-partial def toNumInfo (e : Expr) : Option NumInfo := do
+partial def isNumber? (e : Expr) : Option NumInfo := do
   if e.isAppOfArity `Mathlib.PrePort.HasZero.zero 2 then some {
     number   := 0,
     level    := e.getAppFn.constLevels!.head!,
@@ -39,32 +47,18 @@ partial def toNumInfo (e : Expr) : Option NumInfo := do
     type    := e.getArg! 0,
     hasOne? := e.getArg! 1
   }
-  else if e.isConstOf `Nat.zero then some {
-    number  := 0,
-    level   := levelOne,
-    type    := mkConst `Nat
-  }
-  else if e.isAppOfArity `Nat.succ 1 && e.appArg!.isConstOf `Nat.zero then some {
-    number  := 1,
-    level   := levelOne,
-    type    := mkConst `Nat
-  }
-  else if e.isAppOfArity `Nat.succ 1 && e.appArg!.isAppOfArity `Mathlib.PrePort.HasZero.zero 2 then some {
-    number  := 1,
-    level   := levelOne,
-    type    := mkConst `Nat
-  }
+  -- TODO: may need to check if these instances are def-eq
+  -- (I am hoping that mathlib does not produce terms in which they are not)
   else if e.isAppOfArity `bit0 3 then
-    let info ← toNumInfo $ e.getArg! 2
+    let info ← isNumber? $ e.getArg! 2
     some { info with
              number  := info.number * 2,
              hasAdd? := info.hasAdd? <|> e.getArg! 1 }
   else if e.isAppOfArity `bit1 4 then
-    let info ← toNumInfo $ e.getArg! 2
+    let info ← isNumber? $ e.getArg! 2
     some { info with
              number  := info.number * 2 + 1,
              hasAdd? := info.hasAdd? <|> e.getArg! 2 }
   else none
 
-end Number
 end MathPort

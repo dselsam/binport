@@ -47,10 +47,10 @@ def nat2bits (n : Nat) (h : n > 0) : α := nat2bitsAux 1000 n where
       else if n % 2 == 1 then bit1 (nat2bitsAux fuel (n / 2))
       else bit0 (nat2bitsAux fuel (n / 2))
 
-instance instBits2Nat (n : Nat) : OfNat α (noindex! (n+1)) := ⟨nat2bits n sorry⟩
+instance instBits2Nat (n : Nat) : OfNat α (noindex! (n+1)) := ⟨nat2bits (n+1) sorry⟩
 
---#print instZero2Nat
---#print instOne2Nat
+#print instZero2Nat
+#print instOne2Nat
 #print instBits2Nat
 
 end PrePort

@@ -33,20 +33,6 @@ partial def translateName (s : State) (env : Environment) (n : Name) : Name := d
   where
     dflt n := `Mathlib ++ n
 
-def isRegularNat (s : State) (env : Environment) : Number.NumInfo → MetaM Bool
-  | ⟨n, level, type, hasZero?, hasOne?, hasAdd?⟩ =>
-    let natType := mkConst $ tn `nat
-    let natZero := mkConst $ tn `nat.has_zero
-    let natOne  := mkConst $ tn `nat.has_one
-    let natAdd  := mkConst $ tn `nat.has_add
-    Meta.isDefEq type natType
-    <&&> Meta.isDefEq (hasZero?.getD natZero) natZero
-    <&&> Meta.isDefEq (hasOne?.getD natOne) natOne
-    <&&> Meta.isDefEq (hasAdd?.getD natAdd) natAdd
-
-  where
-    tn n := translateName s env n
-
 def translate (e : Expr) : PortM Expr := do
   let s ← get
   let e := e.replaceConstNames (translateName s (← getEnv))
@@ -60,12 +46,12 @@ def translate (e : Expr) : PortM Expr := do
       | e                 => TransformStep.done e
 
     translateNumbers s e : MetaM TransformStep :=
-      match Number.toNumInfo e with
-      | none   => TransformStep.visit e
-      | some info@⟨n, level, type, hasZero?, hasOne?, hasAdd?⟩ => do
-        if ← isRegularNat s (← getEnv) info then
-          check e $ mkNatLit n
-        else
+      match isConcreteNat? e with
+      | some n => TransformStep.done $ mkNatLit n
+      | none   =>
+        match isNumber? e with
+        | none => TransformStep.visit e
+        | some info@⟨n, level, type, hasZero?, hasOne?, hasAdd?⟩ => do
           let ofNatType := mkAppN (mkConst `OfNat [level]) #[type, mkNatLit n]
           let ofNatInst :=
             if n == 0 then

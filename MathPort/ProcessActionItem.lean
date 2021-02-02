@@ -72,7 +72,6 @@ def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : P
       let correctPrec : Option Syntax := Syntax.mkNumLit (toString Parser.maxPrec)
       `(notation $[: $correctPrec]? $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
 
-  println! s!"syntax:\n\n{Lean.Elab.Frontend.showSyntax stx}"
   elabCommand stx
 
 def maybeRegisterEquation (n : Name) : PortM Unit := do
@@ -196,8 +195,6 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     | Declaration.defnDecl defn => do
       let name := f defn.name
       let type ← translate defn.type
-
-      println! "[defn] {name} {type}"
 
       if s.ignored.contains defn.name then return ()
 

@@ -185,14 +185,8 @@ noinst int.decidable_eq
 neversorry of_as_true
 
 #
-# Things that (last we checked) took too long to check or went OOM
-#
-sorry cauchy_seq_finset_of_geometric_bound
-sorry lie_module.derived_series_le_lower_central_series
-sorry has_fpower_series_at.comp
-
-#
 # Things that are added in PrePort
+#
 
 align bit0 Mathlib.PrePort.bit0
 align bit1 Mathlib.PrePort.bit1
