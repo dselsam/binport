@@ -3,6 +3,8 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam
 -/
+import PrePort.Number
+
 namespace Mathlib
 namespace PrePort
 
@@ -11,6 +13,30 @@ def Fin (n : Nat) := {i : Nat // i < n}
 abbrev is_valid_char (n : Nat) : Prop :=
   n < 0xd800 ∨ (0xdfff < n ∧ n < 0x110000)
 
+set_option pp.all true in
+#print is_valid_char
+
+/-
+  ∀ n,
+    @Eq.{1} Prop (Mathlib.PrePort.is_valid_char n)
+      (Or
+        (@HasLess.Less.{0} Nat Mathlib.nat.has_lt n
+          (@OfNat.ofNat.{0} Nat 55296
+            (@Mathlib.PrePort.instBits2Nat.{0} Nat Mathlib.nat.has_one Mathlib.nat.has_add 55295)))
+        (And
+          (@HasLess.Less.{0} Nat Mathlib.nat.has_lt
+            (@OfNat.ofNat.{0} Nat 57343
+              (@Mathlib.PrePort.instBits2Nat.{0} Nat Mathlib.nat.has_one Mathlib.nat.has_add 57342))
+            n)
+          (@HasLess.Less.{0} Nat Mathlib.nat.has_lt n
+            (@OfNat.ofNat.{0} Nat 1114112
+              (@Mathlib.PrePort.instBits2Nat.{0} Nat Mathlib.nat.has_one Mathlib.nat.has_add 1114111)))))
+
+fun n =>
+  Or (@HasLess.Less.{0} Nat instHasLessNat n (@OfNat.ofNat.{0} Nat 55296 (instOfNatNat 55296)))
+    (And (@HasLess.Less.{0} Nat instHasLessNat (@OfNat.ofNat.{0} Nat 57343 (instOfNatNat 57343)) n)
+      (@HasLess.Less.{0} Nat instHasLessNat n (@OfNat.ofNat.{0} Nat 1114112 (instOfNatNat 1114112))))
+-/
 structure Char where
   val   : Nat
   valid : is_valid_char val
