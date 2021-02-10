@@ -34,10 +34,12 @@ partial def translateName (s : State) (env : Environment) (n : Name) : Name := d
     dflt n := `Mathlib ++ n
 
 def translate (e : Expr) : PortM Expr := do
+  println! "[translate] START"
   let s ← get
   let e := e.replaceConstNames (translateName s (← getEnv))
   let e ← liftMetaM $ Meta.transform e (pre := translateNumbers s)
   let e ← liftMetaM $ Meta.transform e (pre := translateStrings s)
+  println! "[translate] END  "
   e
 
   where
