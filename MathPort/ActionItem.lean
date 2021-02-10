@@ -13,6 +13,8 @@ namespace MathPort
 
 open Lean
 
+deriving Repr for Declaration
+
 inductive MixfixKind
 | «prefix»
 | «infixl»
