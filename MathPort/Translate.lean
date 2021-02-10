@@ -33,6 +33,8 @@ partial def translateName (s : State) (env : Environment) (n : Name) : Name := d
   where
     dflt n := `Mathlib ++ n
 
+-- `safe?` indicates if we can call e.g. inferType and isDefEq willy-nilly
+-- (translating constructors of inductive types is *not* safe)
 def translate (e : Expr) (safe? : Bool := true) : PortM Expr := do
   println! "[translate] START"
   let s ← get
