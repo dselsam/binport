@@ -134,7 +134,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
   | ActionItem.class n => do
     let env ← getEnv
-    if s.ignored.contains n then return ()
+    if s.ignores.contains n then return ()
     -- for meta classes, Lean4 won't know about the decl
     match addClass env (f n) with
     | Except.error msg => warnStr msg
@@ -163,7 +163,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       let name := f ax.name
       let type ← translate ax.type
 
-      if s.ignored.contains ax.name then return ()
+      if s.ignores.contains ax.name then return ()
       maybeRegisterEquation ax.name
 
       addDeclLoud ax.name $ Declaration.axiomDecl {
@@ -176,7 +176,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       let name := f thm.name
       let type ← translate thm.type
 
-      if s.ignored.contains thm.name then return ()
+      if s.ignores.contains thm.name then return ()
       maybeRegisterEquation thm.name
 
       if s.sorries.contains thm.name ∨ (¬ (← read).proofs ∧ ¬ s.neverSorries.contains thm.name) then
@@ -199,7 +199,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       let name := f defn.name
       let type ← translate defn.type
 
-      if s.ignored.contains defn.name then return ()
+      if s.ignores.contains defn.name then return ()
 
       let value ← translate defn.value
       let env ← getEnv
@@ -215,7 +215,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       let name := f ind.name
       let type ← translate ind.type
 
-      if not (s.ignored.contains ind.name) then
+      if not (s.ignores.contains ind.name) then
         -- TODO: why do I need this nested do? Because of the scope?
         let ctors ← ind.ctors.mapM fun (ctor : Constructor) => do
           let cname := f ctor.name

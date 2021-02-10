@@ -25,7 +25,7 @@ structure ExportInfo where
 
 structure Rules where
   newNames     : HashMap Name Name := {}
-  ignored      : HashSet Name      := {}
+  ignores      : HashSet Name      := {}
   sorries      : HashSet Name      := {}
   neverSorries : HashSet Name      := {} -- e.g. of_as_true
   noInsts      : HashSet Name      := {}

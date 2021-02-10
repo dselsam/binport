@@ -21,6 +21,7 @@ def parseRules (rulesFilename : String) : PortM Unit :=
       | ("#" :: _)         => pure ()
       | ["align", n₁, n₂]  => align (parseName n₁) (parseName n₂)
       | ["unchanged", n]   => unchanged (parseName n)
+      | ["ignore", n]      => ignore (parseName n)
       | ["rename", n₁, n₂] => rename (parseName n₁) (parseName n₂)
       | ["sorry", n]       => addSorry (parseName n)
       | ["neversorry", n]  => addNeverSorry (parseName n)
@@ -31,10 +32,13 @@ def parseRules (rulesFilename : String) : PortM Unit :=
     where
       align (f t : Name) := modify $ λ s =>
         { s with newNames := s.newNames.insert f t,
-                 ignored  := s.ignored.insert f }
+                 ignores  := s.ignores.insert f }
 
       rename (f t : Name) := modify $ λ s =>
         { s with newNames := s.newNames.insert f t }
+
+      ignore (f t : Name) := modify $ λ s =>
+        { s with ignores := s.ignores.insert f t }
 
       unchanged (n : Name) := align n n
 
