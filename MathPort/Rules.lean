@@ -37,8 +37,8 @@ def parseRules (rulesFilename : String) : PortM Unit :=
       rename (f t : Name) := modify $ λ s =>
         { s with newNames := s.newNames.insert f t }
 
-      ignore (f t : Name) := modify $ λ s =>
-        { s with ignores := s.ignores.insert f t }
+      ignore (n : Name) := modify $ λ s =>
+        { s with ignores := s.ignores.insert n }
 
       unchanged (n : Name) := align n n
 
