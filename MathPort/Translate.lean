@@ -37,6 +37,7 @@ def translate (e : Expr) : PortM Expr := do
   let s ← get
   let e := e.replaceConstNames (translateName s (← getEnv))
   let e ← liftMetaM $ Meta.transform e (pre := translateNumbers s)
+  let e ← liftMetaM $ Meta.transform e (pre := translateStrings s)
   e
 
   where
@@ -44,6 +45,19 @@ def translate (e : Expr) : PortM Expr := do
       match e with
       | Expr.const n ls _ => TransformStep.done $ mkConst (translateName s (← getEnv) n) ls
       | e                 => TransformStep.done e
+
+    translateStrings s e : MetaM TransformStep := do
+      let type ← Meta.inferType e
+      if (← Meta.isDefEq type (mkConst `Mathlib.Pre.String)) then
+        -- toString3 : String → Mathlib.PrePort.String
+        -- fromString3 : (s : Mathlib.PrePort.String) → (List.all s.data fun (c : Char) => Nat.ble (Nat.succ c.val) UInt32.size) = true → String
+        let pf  : Expr ← Meta.mkEqRefl (mkConst `Bool.true)
+        let str : Expr := mkAppN (mkConst `Mathlib.PrePort.fromString3) #[e, pf]
+        -- TODO: is this necessary?
+        let str ← Meta.reduce str
+        check e $ mkAppN (mkConst `Mathlib.PrePort.toString3) #[str]
+      else
+        TransformStep.visit e
 
     translateNumbers s e : MetaM TransformStep :=
       match isConcreteNat? e with

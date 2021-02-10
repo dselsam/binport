@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam
 
 These functions mimic the ones in lean3/src/library/num.cpp
-and must be called *before* translating the constants into Lean4.
+and must be called *after* translating the constants into Lean4.
 -/
 import MathPort.Util
 import MathPort.Basic

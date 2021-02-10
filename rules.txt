@@ -184,6 +184,9 @@ noinst int.decidable_eq
 
 neversorry of_as_true
 
+align dite dite
+align ite ite
+
 #
 # Things that are added in PrePort
 #
@@ -198,3 +201,8 @@ align has_zero.mk Mathlib.PrePort.HasZero.mk
 align has_one Mathlib.PrePort.HasOne
 align has_one.one Mathlib.PrePort.HasOne.one
 align has_one.mk Mathlib.PrePort.HasOne.mk
+
+align fin Mathlib.PrePort.Fin
+align is_valid_char Mathlib.PrePort.is_valid_char
+align char Mathlib.PrePort.Char
+align string_imp Mathlib.PrePort.String

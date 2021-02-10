@@ -78,6 +78,9 @@ partial def Loop.forIn {β : Type u} {m : Type u → Type v} [Monad m] (loop : L
       | ForInStep.yield b => loop b
   loop init
 
+instance : ForIn m Loop Unit where
+  forIn := Loop.forIn
+
 syntax "repeat " doSeq : doElem
 
 macro_rules
@@ -88,16 +91,3 @@ syntax "while " termBeforeDo " do " doSeq : doElem
 macro_rules
   | `(doElem| while $cond do $seq) =>
     `(doElem| repeat if $cond then $seq else break)
-
-namespace IO.FS
-
-variable [Monad m] [MonadLiftT IO m]
-
-@[inline]
-def forEachLine (fileName : String) (f : String → m Unit) : m Unit :=
-  IO.FS.withFile fileName IO.FS.Mode.read fun h => do
-    while (not (← h.isEof)) do
-      let line := (← h.getLine).dropRightWhile λ c => c == '\n'
-      if line == "" then continue else f line
-
-end IO.FS
