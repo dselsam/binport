@@ -220,7 +220,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
         -- TODO: why do I need this nested do? Because of the scope?
         let ctors ← ind.ctors.mapM fun (ctor : Constructor) => do
           let cname := f ctor.name
-          let ctype ← translate ctor.type
+          let ctype ← translate ctor.type (safe? := false) /- because we cannot infer types yet -/
           pure { ctor with name := cname, type := ctype }
         addDeclLoud ind.name $ Declaration.inductDecl lps nps
           [{ ind with name := name, type := type, ctors := ctors }] iu
