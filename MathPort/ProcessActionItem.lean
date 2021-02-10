@@ -32,12 +32,13 @@ def addDeclLoud (n : Name) (d : Declaration) : PortM Unit := do
   addDecl d
   println! "[addDecl] END   {path.mrpath.path} {n}"
   if shouldGenCodeFor d then
+    println! "[compile] START   {path.mrpath.path} {n}"
     match (← getEnv).compileDecl {} d with
-    | Except.ok env    => println! "[compile] {n} SUCCESS!"
+    | Except.ok env    => println! "[compile] END   {n} SUCCESS!"
                           setEnv env
     | Except.error err => let msg ← err.toMessageData (← getOptions)
                           let msg ← msg.toString
-                          println! "[compile] {n} {msg}"
+                          println! "[compile] END   {n} {msg}"
 
 def setAttr (attr : Attribute) (declName : Name) : PortM Unit := do
   let env ← getEnv
