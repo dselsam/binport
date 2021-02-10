@@ -41,7 +41,7 @@ unportMathlib:
 
 # TODO: simulate Lean3's `--make`
 preport:
-	LEAN_PATH=$(LEAN4_PATH) time ./lean4/build/release/stage1/bin/lean --o=$(LIB4)/PrePort/Numbers.olean $(LIB4)/PrePort/Numbers.lean
+	LEAN_PATH=$(LEAN4_PATH) time ./lean4/build/release/stage1/bin/lean --o=$(LIB4)/PrePort/Number.olean $(LIB4)/PrePort/Number.lean
 	LEAN_PATH=$(LEAN4_PATH) time ./lean4/build/release/stage1/bin/lean --o=$(LIB4)/PrePort/String.olean $(LIB4)/PrePort/String.lean
 	LEAN_PATH=$(LEAN4_PATH) time ./lean4/build/release/stage1/bin/lean --o=$(LIB4)/PrePort.olean $(LIB4)/PrePort.lean
 
