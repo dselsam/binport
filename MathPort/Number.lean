@@ -55,7 +55,7 @@ partial def isNumber? (e : Expr) : Option NumInfo := do
              number  := info.number * 2,
              hasAdd? := info.hasAdd? <|> e.getArg! 1 }
   else if e.isAppOfArity `Mathlib.PrePort.bit1 4 then
-    let info ← isNumber? $ e.getArg! 2
+    let info ← isNumber? $ e.getArg! 3
     some { info with
              number  := info.number * 2 + 1,
              hasAdd? := info.hasAdd? <|> e.getArg! 2 }
