@@ -13,7 +13,7 @@ namespace MathPort
 
 open Lean
 
-deriving Repr for Declaration
+instance : Repr Declaration := ⟨λ _ _ => "<Declaration>"⟩
 
 inductive MixfixKind
 | «prefix»
