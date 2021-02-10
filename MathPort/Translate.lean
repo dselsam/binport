@@ -48,7 +48,7 @@ def translate (e : Expr) : PortM Expr := do
 
     translateStrings s e : MetaM TransformStep := do
       let type ← Meta.inferType e
-      if (← Meta.isDefEq type (mkConst `Mathlib.Pre.String)) then
+      if (← Meta.isDefEq type (mkConst `Mathlib.PrePort.String)) then
         -- toString3 : String → Mathlib.PrePort.String
         -- fromString3 : (s : Mathlib.PrePort.String) → (List.all s.data fun (c : Char) => Nat.ble (Nat.succ c.val) UInt32.size) = true → String
         let pf  : Expr ← Meta.mkEqRefl (mkConst `Bool.true)
