@@ -9,7 +9,6 @@ rename quot.mk Quot.mk
 rename quot.lift Quot.lift
 rename quot.ind Quot.ind
 
-align id_delta idDelta
 align id_rhs idRhs
 align out_param outParam
 align opt_param optParam

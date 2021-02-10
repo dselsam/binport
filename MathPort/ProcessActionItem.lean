@@ -91,7 +91,6 @@ def tryAddSimpLemma (n : Name) (prio : Nat) : PortM Unit :=
   catch ex => warn ex
 
 def processActionItem (actionItem : ActionItem) : PortM Unit := do
-  println! "{repr actionItem}"
   modify λ s => { s with decl := actionItem.toDecl }
   let s ← get
   let f n := translateName s (← getEnv) n
