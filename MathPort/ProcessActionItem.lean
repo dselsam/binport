@@ -227,13 +227,13 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
         addDeclLoud ind.name $ Declaration.inductDecl lps nps
           [{ ind with name := name, type := type, ctors := ctors }] iu
 
-        println! "[constructions] {name}"
-        println! "[constructions] recOn {name}"
-        mkRecOn name
-        println! "[constructions] casesOn {name}"
-        mkCasesOn name
-        println! "[constructions] noConfusion {name}"
-        mkNoConfusion name
+        --println! "[constructions] {name}"
+        --println! "[constructions] recOn {name}"
+        --mkRecOn name
+        --println! "[constructions] casesOn {name}"
+        --mkCasesOn name
+        --println! "[constructions] noConfusion {name}"
+        --mkNoConfusion name
         --println! "[constructions] below {name}"
         --mkBelow name -- already there
         --println! "[constructions] ibelow {name}"

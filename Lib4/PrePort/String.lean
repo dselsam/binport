@@ -8,7 +8,7 @@ import PrePort.Number
 namespace Mathlib
 namespace PrePort
 
-def Fin (n : Nat) := {i : Nat // i < n}
+def Fin (n : Nat) := { i : Nat // Nat.lt i n }
 
 inductive Nat.LessThanOrEqual (a : Nat) : Nat → Prop
 | refl : LessThanOrEqual a a
