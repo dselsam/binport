@@ -190,6 +190,8 @@ align ite ite
 # Things that are added in PrePort
 #
 
+# Nats
+
 align bit0 Mathlib.PrePort.bit0
 align bit1 Mathlib.PrePort.bit1
 
@@ -200,3 +202,17 @@ align has_zero.mk Mathlib.PrePort.HasZero.mk
 align has_one Mathlib.PrePort.HasOne
 align has_one.one Mathlib.PrePort.HasOne.one
 align has_one.mk Mathlib.PrePort.HasOne.mk
+
+# Strings
+
+align fin Mathlib.PrePort.Fin
+align nat.less_than_or_equal Mathlib.PrePort.Nat.LessThanOrEqual
+align nat.less_than_or_equal.refl Mathlib.PrePort.Nat.LessThanOrEqual.refl
+align nat.less_than_or_equal.step Mathlib.PrePort.Nat.LessThanOrEqual.step
+align nat.le Mathlib.PrePort.Nat.le
+align nat.lt Mathlib.PrePort.Nat.lt
+align is_valid_char Mathlib.PrePort.isValidChar
+align char Mathlib.PrePort.Char
+align char.mk Mathlib.PrePort.Char.mk
+align string_imp Mathlib.PrePort.String
+align string_imp.mk Mathlib.PrePort.String.mk

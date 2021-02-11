@@ -42,6 +42,7 @@ def translate (e : Expr) : PortM Expr := do
   let s ← get
   let e := e.replaceConstNames (translateName s (← getEnv))
   let e ← liftMetaM $ Meta.transform e (pre := translateNumbers s)
+  let e ← liftMetaM $ Meta.transform e (pre := translateStrings s)
   println! "[translate] END  "
   e
 
@@ -70,6 +71,17 @@ def translate (e : Expr) : PortM Expr := do
               -- def Mathlib.PrePort.instBits2Nat.{u} : {α : Type u} → [inst : HasOne α] → [inst : Add α] → (n : Nat) → OfNat α (n + 1) :=
               mkAppN (mkConst `Mathlib.PrePort.instBits2Nat [level]) #[type, hasOne?.get!, hasAdd?.get!, mkNatLit (n-1)]
           check e $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, ofNatInst]
+
+    translateStrings s e : MetaM TransformStep := do
+      try
+        let type ← Meta.inferType e
+        if (← Meta.isDefEq type (mkConst `Mathlib.PrePort.String)) then
+          let str : Expr := mkAppN (mkConst `Mathlib.PrePort.fromString3) #[e]
+          let str ← Meta.reduce str
+          check e $ mkAppN (mkConst `Mathlib.PrePort.toString3) #[str]
+        else
+          TransformStep.visit e
+      catch ex => TransformStep.done e
 
     check e e' : MetaM TransformStep := do
       TransformStep.done e'
