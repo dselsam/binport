@@ -42,12 +42,19 @@ def nat2bits (n : Nat) (h : n > 0) : α := nat2bitsAux 1000 n where
     match fuel with
     | 0        => HasOne.one -- TODO: well-founded
     | fuel + 1 =>
-      if n == 0 then HasOne.one -- TODO: this case is impossible
+      if n == 0 then HasZero.zero
       else if n == 1 then HasOne.one
       else if n % 2 == 1 then bit1 (nat2bitsAux fuel (n / 2))
       else bit0 (nat2bitsAux fuel (n / 2))
 
 instance instBits2Nat (n : Nat) : OfNat α (noindex! (n+1)) := ⟨nat2bits (n+1) sorry⟩
+
+namespace Number
+
+theorem zeroSimp : @HasZero.zero α _ = 0 := rfl
+theorem oneSimp  : @HasOne.one α   _ = 1 := rfl
+
+end Number
 
 #print instZero2Nat
 #print instOne2Nat
