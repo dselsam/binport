@@ -8,14 +8,14 @@ import PrePort.Number
 namespace Mathlib
 namespace PrePort
 
-def Fin (n : Nat) := { i : Nat // Nat.lt i n }
-
 inductive Nat.LessThanOrEqual (a : Nat) : Nat → Prop
 | refl : LessThanOrEqual a a
 | step : ∀ {b}, LessThanOrEqual a b → LessThanOrEqual a b.succ
 
-@[reducible] protected def Nat.le (n m : Nat) := LessThanOrEqual n m
-@[reducible] protected def Nat.lt (n m : Nat) := LessThanOrEqual n.succ m
+abbrev Nat.le (n m : Nat) := LessThanOrEqual n m
+abbrev Nat.lt (n m : Nat) := LessThanOrEqual n.succ m
+
+def Fin (n : Nat) := { i : Nat // Nat.lt i n }
 
 abbrev isValidChar (n : Nat) : Prop :=
   Nat.lt n 0xd800 ∨ (Nat.lt 0xdfff n ∧ Nat.lt n 0x110000)
