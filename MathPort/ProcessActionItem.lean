@@ -203,6 +203,9 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
       let value ← translate defn.value
       let env ← getEnv
+
+      -- TODO: extra ignores for below/ibelow
+
       addDeclLoud defn.name $ Declaration.defnDecl {
         defn with
           name  := name,
@@ -223,6 +226,22 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
           pure { ctor with name := cname, type := ctype }
         addDeclLoud ind.name $ Declaration.inductDecl lps nps
           [{ ind with name := name, type := type, ctors := ctors }] iu
+
+        println! "[constructions] {name}"
+        println! "[constructions] recOn {name}"
+        mkRecOn name
+        println! "[constructions] casesOn {name}"
+        mkCasesOn name
+        println! "[constructions] noConfusion {name}"
+        mkNoConfusion name
+        --println! "[constructions] below {name}"
+        --mkBelow name -- already there
+        --println! "[constructions] ibelow {name}"
+        --mkIBelow name
+        --println! "[constructions] brecOn {name}"
+        --mkBRecOn name
+        --println! "[constructions] binductionOn {name}"
+        --mkBInductionOn name
 
       let oldRecName := mkOldRecName (f ind.name)
       let oldRec ← liftMetaM $ mkOldRecursor (f ind.name) oldRecName

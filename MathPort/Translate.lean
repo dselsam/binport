@@ -28,6 +28,10 @@ partial def translateName (s : State) (env : Environment) (n : Name) : Name := d
           if env.contains (mkOldRecName newIndName) then mkOldRecName newIndName
           else newIndName ++ "rec"
         | _ => dflt n
+    else if n.isStr && (n.getString! == "below" || n.getString! == "ibelow") then
+      let newName := Name.mkStr (dflt n.getPrefix) ("old_" ++ n.getString!)
+      --dbgTrace! "[tbelow] {n} ==> {newName}"
+      newName
     else dflt n
 
   where
