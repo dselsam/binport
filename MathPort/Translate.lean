@@ -60,17 +60,17 @@ def translate (e : Expr) : PortM Expr := do
         | none => TransformStep.visit e
         | some info@⟨n, level, type, hasZero?, hasOne?, hasAdd?⟩ => do
           let ofNatType := mkAppN (mkConst `OfNat [level]) #[type, mkNatLit n]
-          let ofNatInst :=
-            if n == 0 then
-              -- def Mathlib.PrePort.instZero2Nat.{u} : {α : Type u} → [inst : HasZero α] → OfNat α 0
-              mkAppN (mkConst `Mathlib.PrePort.instZero2Nat [level]) #[type, hasZero?.get!]
-            else if n == 1 then
-              -- def Mathlib.PrePort.instOne2Nat.{u} : {α : Type u} → [inst : HasOne α] → OfNat α 1
-              mkAppN (mkConst `Mathlib.PrePort.instOne2Nat [level]) #[type, hasOne?.get!]
-            else
-              -- def Mathlib.PrePort.instBits2Nat.{u} : {α : Type u} → [inst : HasOne α] → [inst : Add α] → (n : Nat) → OfNat α (n + 1) :=
-              mkAppN (mkConst `Mathlib.PrePort.instBits2Nat [level]) #[type, hasOne?.get!, hasAdd?.get!, mkNatLit (n-1)]
-          check e $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, ofNatInst]
+          if n == 0 then
+            let ofNatInst := mkAppN (mkConst `Mathlib.PrePort.instZero2Nat [level]) #[type, hasZero?.get!]
+            check e $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, ofNatInst]
+          else if n == 1 then
+            let ofNatInst := mkAppN (mkConst `Mathlib.PrePort.instZero2Nat [level]) #[type, hasZero?.get!]
+            check e $ mkAppN (mkConst `Mathlib.PrePort.instOne2Nat [level]) #[type, hasOne?.get!]
+          else
+            -- TODO: too slow currently
+            TransformStep.done e
+            -- mkAppN (mkConst `Mathlib.PrePort.instBits2Nat [level]) #[type, hasOne?.get!, hasAdd?.get!, mkNatLit (n-1)]
+
 
     translateStrings s e : MetaM TransformStep := do
       if not (e.isAppOfArity `Mathlib.string.str 2) then TransformStep.visit e else
