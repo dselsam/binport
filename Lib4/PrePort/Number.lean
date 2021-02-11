@@ -42,7 +42,7 @@ def nat2bits (n : Nat) (h : n > 0) : α := nat2bitsAux 1000 n where
     match fuel with
     | 0        => HasOne.one -- TODO: well-founded
     | fuel + 1 =>
-      if n == 0 then HasZero.zero
+      if n == 0 then HasOne.one -- note: this cannot occur and we don't want HasZero dep
       else if n == 1 then HasOne.one
       else if n % 2 == 1 then bit1 (nat2bitsAux fuel (n / 2))
       else bit0 (nat2bitsAux fuel (n / 2))
@@ -56,6 +56,7 @@ theorem oneSimp  : @HasOne.one α   _ = 1 := rfl
 
 end Number
 
+#print OfNat.ofNat
 #print instZero2Nat
 #print instOne2Nat
 #print instBits2Nat
