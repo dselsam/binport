@@ -64,8 +64,8 @@ def translate (e : Expr) : PortM Expr := do
             let ofNatInst := mkAppN (mkConst `Mathlib.PrePort.instZero2Nat [level]) #[type, hasZero?.get!]
             check e $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, ofNatInst]
           else if n == 1 then
-            let ofNatInst := mkAppN (mkConst `Mathlib.PrePort.instZero2Nat [level]) #[type, hasZero?.get!]
-            check e $ mkAppN (mkConst `Mathlib.PrePort.instOne2Nat [level]) #[type, hasOne?.get!]
+            let ofNatInst := mkAppN (mkConst `Mathlib.PrePort.instOne2Nat [level]) #[type, hasOne?.get!]
+            check e $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, ofNatInst]
           else
             -- TODO: too slow currently
             TransformStep.done e
