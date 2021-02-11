@@ -38,13 +38,16 @@ instance instOne2Nat  : OfNat α (noindex! 1) := ⟨HasOne.one⟩
 
 instance instOne2Inhabited [HasOne α] : Inhabited α := ⟨HasOne.one⟩
 
-partial def nat2bits (n : Nat) : α :=
-  if n == 0 then arbitrary -- note: we only call nat2bits when n > 0 (no HasZero dep)
-  else if n == 1 then HasOne.one
-  else if n % 2 == 1 then bit1 (nat2bits (n / 2))
-  else bit0 (nat2bits (n / 2))
+def nat2bits (fuel n : Nat) : α :=
+  match fuel with
+  | 0        => arbitrary
+  | fuel + 1 =>
+    if n == 0 then arbitrary
+    else if n == 1 then HasOne.one
+    else if n % 2 == 1 then bit1 (nat2bits fuel (n / 2))
+    else bit0 (nat2bits fuel (n / 2))
 
-instance instBits2Nat (n : Nat) : OfNat α (noindex! (n+1)) := ⟨nat2bits (n+1)⟩
+instance instBits2Nat (n : Nat) : OfNat α (noindex! (n+1)) := ⟨nat2bits 32 (n+1)⟩
 
 #print OfNat.ofNat
 #print instZero2Nat
