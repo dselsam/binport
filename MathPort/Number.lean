@@ -51,16 +51,16 @@ partial def isNumber? (e : Expr) : Option NumInfo := do
   -- (I am hoping that mathlib does not produce terms in which they are not)
   else if e.isAppOfArity `Mathlib.PrePort.bit0 3 then
     let info ← isNumber? $ e.getArg! 2
-    if info.hasOne?.isNone then panic! "bit0 no 1"
-    some { info with
-             number  := info.number * 2,
-             hasAdd? := info.hasAdd? <|> e.getArg! 1 }
+    if info.number == 0 then none else
+      some { info with
+               number  := info.number * 2,
+               hasAdd? := info.hasAdd? <|> e.getArg! 1 }
   else if e.isAppOfArity `Mathlib.PrePort.bit1 4 then
     let info ← isNumber? $ e.getArg! 3
-    if info.hasOne?.isNone then panic! "bit1 no 1"
-    some { info with
-             number  := info.number * 2 + 1,
-             hasAdd? := info.hasAdd? <|> e.getArg! 2 }
+    if info.number == 0 then none else
+      some { info with
+               number  := info.number * 2 + 1,
+               hasAdd? := info.hasAdd? <|> e.getArg! 2 }
   else none
 
 end MathPort
