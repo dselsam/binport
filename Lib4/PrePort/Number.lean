@@ -38,9 +38,8 @@ instance instOne2Nat  : OfNat α (noindex! 1) := ⟨HasOne.one⟩
 
 instance instOne2Inhabited [HasOne α] : Inhabited α := ⟨HasOne.one⟩
 
--- TODO: well-founded
 partial def nat2bits (n : Nat) : α :=
-  if n == 0 then HasOne.one -- note: we only call nat2bits when n > 0 (no HasZero dep)
+  if n == 0 then arbitrary -- note: we only call nat2bits when n > 0 (no HasZero dep)
   else if n == 1 then HasOne.one
   else if n % 2 == 1 then bit1 (nat2bits (n / 2))
   else bit0 (nat2bits (n / 2))
