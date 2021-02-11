@@ -70,8 +70,9 @@ def translate (e : Expr) : PortM Expr := do
           check e $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, ofNatInst]
 
     check e e' : MetaM TransformStep := do
-      if (← Meta.isDefEq e e') then TransformStep.done e'
-      else throwError! "[translateNumber] broke def-eq, \n{e}\n\n!=\n\n{e'}"
-
+      TransformStep.done e'
+      -- Sadly, the following check is very slow
+      -- if (← Meta.isDefEq e e') then TransformStep.done e'
+      -- else throwError! "[translateNumber] broke def-eq, \n{e}\n\n!=\n\n{e'}"
 
 end MathPort
