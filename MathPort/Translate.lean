@@ -73,7 +73,7 @@ def translate (e : Expr) : PortM Expr := do
           check e $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, ofNatInst]
 
     translateStrings s e : MetaM TransformStep := do
-      if not (e.isAppArityOf `Mathlib.string.str 2) then TransformStep.visit e else
+      if not (e.isAppOfArity `Mathlib.string.str 2) then TransformStep.visit e else
         try
           let type ← Meta.inferType e
           if (← Meta.isDefEq type (mkConst `Mathlib.PrePort.String)) then
