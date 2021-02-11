@@ -47,7 +47,7 @@ def nat2bits (fuel n : Nat) : α :=
     else if n % 2 == 1 then bit1 (nat2bits fuel (n / 2))
     else bit0 (nat2bits fuel (n / 2))
 
-instance instBits2Nat (n : Nat) : OfNat α (noindex! (n+1)) := ⟨nat2bits 20 (n+1)⟩
+instance instBits2Nat (n : Nat) : OfNat α (noindex! (n+1)) := ⟨nat2bits 40 (n+1)⟩
 
 #print OfNat.ofNat
 #print instZero2Nat
