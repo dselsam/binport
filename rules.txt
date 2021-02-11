@@ -9,7 +9,6 @@ rename quot.mk Quot.mk
 rename quot.lift Quot.lift
 rename quot.ind Quot.ind
 
-align id_delta idDelta
 align id_rhs idRhs
 align out_param outParam
 align opt_param optParam
@@ -183,6 +182,9 @@ noinst forall_prop_decidable
 noinst int.decidable_eq
 
 neversorry of_as_true
+
+align dite dite
+align ite ite
 
 #
 # Things that are added in PrePort

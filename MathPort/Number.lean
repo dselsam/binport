@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam
 
 These functions mimic the ones in lean3/src/library/num.cpp
-and must be called *before* translating the constants into Lean4.
+and must be called *after* translating the constants into Lean4.
 -/
 import MathPort.Util
 import MathPort.Basic
@@ -49,13 +49,13 @@ partial def isNumber? (e : Expr) : Option NumInfo := do
   }
   -- TODO: may need to check if these instances are def-eq
   -- (I am hoping that mathlib does not produce terms in which they are not)
-  else if e.isAppOfArity `bit0 3 then
+  else if e.isAppOfArity `Mathlib.PrePort.bit0 3 then
     let info ← isNumber? $ e.getArg! 2
     some { info with
              number  := info.number * 2,
              hasAdd? := info.hasAdd? <|> e.getArg! 1 }
-  else if e.isAppOfArity `bit1 4 then
-    let info ← isNumber? $ e.getArg! 2
+  else if e.isAppOfArity `Mathlib.PrePort.bit1 4 then
+    let info ← isNumber? $ e.getArg! 3
     some { info with
              number  := info.number * 2 + 1,
              hasAdd? := info.hasAdd? <|> e.getArg! 2 }

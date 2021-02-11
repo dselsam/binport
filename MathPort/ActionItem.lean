@@ -13,12 +13,15 @@ namespace MathPort
 
 open Lean
 
+instance : Repr Declaration := ⟨λ _ _ => "<Declaration>"⟩
+
 inductive MixfixKind
 | «prefix»
 | «infixl»
 | «infixr»
 | «postfix»
 | «singleton»
+deriving Repr
 
 def MixfixKind.toAttr : MixfixKind → Name
 | MixfixKind.prefix     => `Lean.Parser.Command.prefix
@@ -49,6 +52,7 @@ structure ExportDecl : Type where
   hadExplicit : Bool
   renames : Array (Name × Name)
   exceptNames : Array Name
+  deriving Repr
 
 structure ProjectionInfo : Type where
   -- pr_i A.. (mk A f_1 ... f_n) ==> f_i
@@ -70,6 +74,7 @@ inductive ActionItem : Type
 | «mixfix»       : MixfixKind → Name → Nat → String → ActionItem
 | «export»       : ExportDecl → ActionItem
 | «projection»   : ProjectionInfo → ActionItem
+  deriving Repr
 
 def ActionItem.toDecl : ActionItem → Name
   | ActionItem.decl d =>
