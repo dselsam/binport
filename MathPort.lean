@@ -21,6 +21,6 @@ unsafe def main (args : List String) : IO Unit := do
       | none   => throw $ IO.userError s!"First argument <proof> must be 0 or 1"
     match lib with
     | "lean3"   => MathPort.run proofs $ Path34.mk MODULES[1] ⟨"all"⟩
-    | "mathlib" => MathPort.run proofs $ Path34.mk MODULES[0] ⟨"all"⟩
+    | "mathlib" => MathPort.run proofs $ Path34.mk MODULES[0] ⟨"algebra/ordered_ring"⟩
     | _         => throw $ IO.userError "Second argument <lib> must be 'lean3' or 'mathlib'"
   | _ => throw $ IO.userError "Expected <proof> <lib>"
