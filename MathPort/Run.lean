@@ -67,6 +67,7 @@ def genOLeanFor (proofs : Bool) (target : Path34) : IO Unit := do
     let env₀ := env₀.setMainModule target.mrpath.toDotPath.path
     let _ ← PortM.toIO (ctx := { proofs := proofs, path := target }) (env := env₀) do
       Elab.Command.setOption `pp.all $ DataValue.ofBool true
+      Elab.Command.setOption `maxHeartbeats $ DataValue.ofNat 1000000
       parseRules rulesFilename
       IO.FS.withFile target.toTLean IO.FS.Mode.read fun h => do
        let _ ← h.getLine -- discard imports
