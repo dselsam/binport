@@ -68,15 +68,23 @@ def createDirectoriesIfNotExists (outFilename : String) : IO Unit := do
   let status ← IO.Process.run s
   pure ()
 
+section Loop
+
 structure Loop where
 
+variable  {β : Type u} {m : Type u → Type v} [Monad m]
+
 @[inline]
-partial def Loop.forIn {β : Type u} {m : Type u → Type v} [Monad m] (loop : Loop) (init : β) (f : Unit → β → m (ForInStep β)) : m β :=
+partial def Loop.forIn (loop : Loop) (init : β) (f : Unit → β → m (ForInStep β)) : m β :=
   let rec @[specialize] loop (b : β) : m β := do
     match ← f () b with
       | ForInStep.done b  => pure b
       | ForInStep.yield b => loop b
   loop init
+
+instance : ForIn m Loop Unit := ⟨Loop.forIn⟩
+
+end Loop
 
 syntax "repeat " doSeq : doElem
 
@@ -101,3 +109,17 @@ def forEachLine (fileName : String) (f : String → m Unit) : m Unit :=
       if line == "" then continue else f line
 
 end IO.FS
+
+section AutoParam
+open Lean Lean.Meta
+
+-- TODO: ToExpr instance for Syntax
+def obviouslySyntax : Expr := do
+  mkAppN (mkConst `Lean.Syntax.ident) #[
+    mkConst `Lean.SourceInfo.none,
+    mkApp (mkConst `String.toSubstring) (toExpr "obviously"),
+    toExpr `Mathlib.obviously,
+    toExpr ([] : List (Prod Name (List String)))
+  ]
+
+end AutoParam

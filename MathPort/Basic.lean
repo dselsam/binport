@@ -32,8 +32,10 @@ structure Rules where
 
 structure State extends ExportInfo, Rules where
   decl           : Name                     := `unknown
+  irreducibles   : HashSet Name             := {}
   nNotations     : Nat                      := 0
   name2equations : HashMap Name (List Name) := {}
+
 
 abbrev PortM := ReaderT Context $ StateRefT State CommandElabM
 

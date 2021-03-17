@@ -66,15 +66,18 @@ def genOLeanFor (proofs : Bool) (target : Path34) : IO Unit := do
   withImportModulesConst imports (opts := {}) (trustLevel := 0) $ λ env₀ => do
     let env₀ := env₀.setMainModule target.mrpath.toDotPath.path
     let _ ← PortM.toIO (ctx := { proofs := proofs, path := target }) (env := env₀) do
-      Elab.Command.setOption `pp.all $ DataValue.ofBool true
       parseRules rulesFilename
       IO.FS.withFile target.toTLean IO.FS.Mode.read fun h => do
        let _ ← h.getLine -- discard imports
+       let mut actionItems := #[]
        while (not (← h.isEof)) do
          let line := (← h.getLine).dropRightWhile λ c => c == '\n'
          if line == "" then continue
-         for actionItem in (← processLine line) do
-           processActionItem actionItem
+         actionItems := actionItems.append (← processLine line).toArray
+
+       let mut isIrreducible : Bool := false
+       for actionItem in actionItems do
+         processActionItem actionItem
 
       let env ← getEnv
       writeModule env target.toLean4olean

@@ -33,41 +33,41 @@ partial def translateName (s : State) (env : Environment) (n : Name) : Name := d
   where
     dflt n := `Mathlib ++ n
 
+def doubleCheck (e e' : Expr) : MetaM TransformStep := do
+  if (← Meta.isDefEq e e') then TransformStep.done e'
+  else throwError "[translateNumber] broke def-eq, \n{e}\n\n!=\n\n{e'}"
+
 def translate (e : Expr) : PortM Expr := do
   let s ← get
   let e := e.replaceConstNames (translateName s (← getEnv))
   let e ← liftMetaM $ Meta.transform e (pre := translateNumbers s)
+  let e ← liftMetaM $ Meta.transform e (pre := translateAutoParams s)
   e
 
   where
-    translateNames s e : MetaM TransformStep := do
-      match e with
-      | Expr.const n ls _ => TransformStep.done $ mkConst (translateName s (← getEnv) n) ls
-      | e                 => TransformStep.done e
-
     translateNumbers s e : MetaM TransformStep :=
       match isConcreteNat? e with
       | some n => TransformStep.done $ mkNatLit n
       | none   =>
         match isNumber? e with
         | none => TransformStep.visit e
-        | some info@⟨n, level, type, hasZero?, hasOne?, hasAdd?⟩ => do
-          let ofNatType := mkAppN (mkConst `OfNat [level]) #[type, mkNatLit n]
-          let ofNatInst :=
-            if n == 0 then
-              -- def Mathlib.PrePort.instZero2Nat.{u} : {α : Type u} → [inst : HasZero α] → OfNat α 0
-              mkAppN (mkConst `Mathlib.PrePort.instZero2Nat [level]) #[type, hasZero?.get!]
-            else if n == 1 then
-              -- def Mathlib.PrePort.instOne2Nat.{u} : {α : Type u} → [inst : HasOne α] → OfNat α 1
-              mkAppN (mkConst `Mathlib.PrePort.instOne2Nat [level]) #[type, hasOne?.get!]
-            else
-              -- def Mathlib.PrePort.instBits2Nat.{u} : {α : Type u} → [inst : HasOne α] → [inst : Add α] → (n : Nat) → OfNat α (n + 1) :=
-              mkAppN (mkConst `Mathlib.PrePort.instBits2Nat [level]) #[type, hasOne?.get!, hasAdd?.get!, mkNatLit (n-1)]
-          check e $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, ofNatInst]
+        | some info@⟨n, level, type, hasZero?, hasOne?, hasAdd?⟩ =>
+          let inst := mkAppN (mkConst `OfNat.mk [level]) #[type, mkNatLit n, e]
+          TransformStep.done $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, inst]
 
-    check e e' : MetaM TransformStep := do
-      if (← Meta.isDefEq e e') then TransformStep.done e'
-      else throwError! "[translateNumber] broke def-eq, \n{e}\n\n!=\n\n{e'}"
+    translateAutoParams s e : MetaM TransformStep :=
+      -- def auto_param : Sort u → name → Sort u :=
+      -- λ (α : Sort u) (tac_name : name), α
+      if e.isAppOfArity `Mathlib.auto_param 2 then
+        let level   := e.getAppFn.constLevels!.head!
+        let type    := e.getArg! 0
+        let tacName := e.getArg! 1
+        -- Note: we currently hardcode `obviously`
+        -- if Mathlib really uses other tactics here, we can parse the name from the auto-ported Lean3 string
+        let tacSyntax := Syntax.ident SourceInfo.none "obviously".toSubstring `Mathlib.obviously []
+        TransformStep.done $ mkAppN (mkConst `autoParam [level]) #[type, obviouslySyntax]
+      else
+        TransformStep.visit e
 
 
 end MathPort

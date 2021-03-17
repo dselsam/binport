@@ -11,13 +11,13 @@ namespace MathPort
 open Lean Lean.Meta
 
 def mkOldRecursor (indTy oldRecName : Name) : MetaM (Option Declaration) := do
-  let some (ConstantInfo.inductInfo indI) ← getConst? indTy | throwError $ toString indTy
+  let some (ConstantInfo.inductInfo indI) ← getConst? indTy | throwError (toString indTy)
   let indTy' ← inferType (mkConst indI.name (indI.levelParams.map mkLevelParam))
   let useDepElim ← forallTelescopeReducing indTy' $ fun _ indSort => do
-    let Expr.sort level _ ← pure indSort | throwError $ toString indSort
+    let Expr.sort level _ ← pure indSort | throwError (toString indSort)
     level.normalize != levelZero;
   if useDepElim then return none
-  let some (ConstantInfo.recInfo recI) ← getConst? (indTy ++ "rec") | throwError $ toString $ indTy ++ "rec"
+  let some (ConstantInfo.recInfo recI) ← getConst? (indTy ++ "rec") | throwError (toString $ indTy ++ "rec")
   let crec := mkConst recI.name (recI.levelParams.map mkLevelParam);
   let recTy ← inferType crec;
   forallTelescopeReducing recTy $ fun args _ => do
@@ -26,7 +26,7 @@ def mkOldRecursor (indTy oldRecName : Name) : MetaM (Option Declaration) := do
     let motive := motive.get! 0;
     let motiveTy ← inferType motive;
     forallTelescopeReducing motiveTy $ fun _ elimSort => do
-      let Expr.sort elimLevel _ ← pure elimSort | throwError $ toString elimSort
+      let Expr.sort elimLevel _ ← pure elimSort | throwError (toString elimSort)
       let (minorPremises, args) := args.splitAt recI.numMinors
       let (indices, major) := args.splitAt recI.numIndices
       let majorPremise := major.get! 0

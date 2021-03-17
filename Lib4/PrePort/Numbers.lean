@@ -14,13 +14,14 @@ Specifically, the numeral (17 : α) is notation for
 
 @OfNat.ofNat α 17 (inst : OfNat α 17)
 
-We automatically replace the bit-representation with the OfNat representation
-during porting (the two can be made definitionally equal).
+We automatically wrap the bit-representation with the OfNat representation
+during porting (the two are definitionally equal).
 
-Note that this file needs to coordinate with PrePost/Heterogeneous.lean.
+The non-kernel-computing `nat2bits` instance cannot be used during porting,
+since mathlib currently relies on e.g. 2+2=4 computing in the kernel.
+We keep it in PrePort to support various typeclass experiments.
 -/
 namespace Mathlib
-namespace PrePort
 
 -- We define these classes here so that we can align Mathlib's
 -- classes to them.
@@ -28,30 +29,25 @@ class HasZero (α : Type u) := (zero : α)
 class HasOne  (α : Type u) := (one : α)
 
 universes u
-variable {α : Type u} [HasZero α] [HasOne α] [Add α]
+variable {α : Type u} [HasZero α] [HasOne α] [Add α] [Inhabited α]
 
 def bit0 (x : α) : α := x + x
 def bit1 (x : α) : α := bit0 x + HasOne.one
 
-instance instZero2Nat : OfNat α (noindex! 0) := ⟨HasZero.zero⟩
-instance instOne2Nat  : OfNat α (noindex! 1) := ⟨HasOne.one⟩
+instance instZero2Nat : OfNat α 0 := ⟨HasZero.zero⟩
+instance instOne2Nat  : OfNat α 1 := ⟨HasOne.one⟩
 
 -- TODO: well-founded
-def nat2bits (n : Nat) (h : n > 0) : α := nat2bitsAux 1000 n where
-  nat2bitsAux (fuel : Nat) (n : Nat) : α :=
-    match fuel with
-    | 0        => HasOne.one -- TODO: well-founded
-    | fuel + 1 =>
-      if n == 0 then HasOne.one -- TODO: this case is impossible
-      else if n == 1 then HasOne.one
-      else if n % 2 == 1 then bit1 (nat2bitsAux fuel (n / 2))
-      else bit0 (nat2bitsAux fuel (n / 2))
+partial def nat2bits (n : Nat) : α :=
+  if n == 0 then arbitrary
+  else if n == 1 then HasOne.one
+  else if n % 2 == 1 then bit1 (nat2bits (n / 2))
+  else bit0 (nat2bits (n / 2))
 
-instance instBits2Nat (n : Nat) : OfNat α (noindex! (n+1)) := ⟨nat2bits (n+1) sorry⟩
+instance instBits2Nat (n : Nat) : OfNat α (n+1) := ⟨nat2bits (n+1)⟩
 
 #print instZero2Nat
 #print instOne2Nat
 #print instBits2Nat
 
-end PrePort
 end Mathlib

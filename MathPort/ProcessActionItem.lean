@@ -231,6 +231,6 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
         setAttr { name := `reducible } oldRecName
       | none => pure ()
 
-    | _ => throwError $ toString d.names
+    | _ => throwError (toString d.names)
 
 end MathPort

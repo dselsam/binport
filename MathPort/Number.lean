@@ -35,13 +35,13 @@ structure NumInfo where
   hasAdd?  : Option Expr := none
 
 partial def isNumber? (e : Expr) : Option NumInfo := do
-  if e.isAppOfArity `Mathlib.PrePort.HasZero.zero 2 then some {
+  if e.isAppOfArity `Mathlib.HasZero.zero 2 then some {
     number   := 0,
     level    := e.getAppFn.constLevels!.head!,
     type     := e.getArg! 0
     hasZero? := e.getArg! 1
   }
-  else if e.isAppOfArity `Mathlib.PrePort.HasOne.one 2 then some {
+  else if e.isAppOfArity `Mathlib.HasOne.one 2 then some {
     number  := 1,
     level   := e.getAppFn.constLevels!.head!,
     type    := e.getArg! 0,
