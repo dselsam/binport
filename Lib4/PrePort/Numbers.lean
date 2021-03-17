@@ -34,8 +34,8 @@ variable {α : Type u} [HasZero α] [HasOne α] [Add α] [Inhabited α]
 def bit0 (x : α) : α := x + x
 def bit1 (x : α) : α := bit0 x + HasOne.one
 
-instance instZero2Nat : OfNat α 0 := ⟨HasZero.zero⟩
-instance instOne2Nat  : OfNat α 1 := ⟨HasOne.one⟩
+instance instZero2Nat : OfNat α (nat_lit 0) := ⟨HasZero.zero⟩
+instance instOne2Nat  : OfNat α (nat_lit 1) := ⟨HasOne.one⟩
 
 -- TODO: well-founded
 partial def nat2bits (n : Nat) : α :=
