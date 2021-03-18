@@ -223,6 +223,18 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
         addDeclLoud ind.name $ Declaration.inductDecl lps nps
           [{ ind with name := name, type := type, ctors := ctors }] iu
 
+        try
+          -- these may fail for the invalid inductive types currently being accepted
+          -- by the temporary patch https://github.com/dselsam/lean4/commit/1bef1cb3498cf81f93095bda16ed8bc65af42535
+          mkRecOn name
+          mkCasesOn name
+          mkNoConfusion name
+          mkBelow name -- already there
+          mkIBelow name
+          mkBRecOn name
+          mkBInductionOn name
+        catch _ => pure ()
+
       let oldRecName := mkOldRecName (f ind.name)
       let oldRec ← liftMetaM $ mkOldRecursor (f ind.name) oldRecName
       match oldRec with

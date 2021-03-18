@@ -183,6 +183,47 @@ noinst int.decidable_eq
 
 neversorry of_as_true
 
+
+#
+# Control
+#
+
+align has_pure Pure
+align has_pure.mk Pure.mk
+align has_pure.pure Pure.pure
+
+align has_seq Seq
+align has_seq.mk Seq.mk
+align has_seq.seq Seq.seq
+
+align has_seq_left SeqLeft
+align has_seq_left.mk SeqLeft.mk
+align has_seq_left.seq_left SeqLeft.seqLeft
+
+align has_seq_right SeqRight
+align has_seq_right.mk SeqRight.mk
+align has_seq_right.seq_right SeqRight.seqRight
+
+align functor Functor
+align functor.mk Functor.mk
+align functor.map Functor.map
+align functor.map_const Functor.mapConst
+
+align applicative Applicative
+align applicative.mk Applicative.mk
+align applicative.map Applicative.map
+align applicative.seq_left Applicative.seqLeft
+align applicative.seq_right Applicative.seqRight
+
+align has_bind Bind
+align has_bind.mk Bind.mk
+align has_bind.bind Bind.bind
+
+align monad Monad
+align monad.mk Monad.mk
+align monad.map Monad.map
+align monad.seq Monad.seq
+
 #
 # Things that are added in PrePort
 #
