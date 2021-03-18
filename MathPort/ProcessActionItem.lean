@@ -87,17 +87,116 @@ def tryAddSimpLemma (n : Name) (prio : Nat) : PortM Unit :=
     println! "[simp] {n} {prio}"
   catch ex => warn ex
 
-def extractNameTypeValue (decl : Declaration) : Option (Name × Expr × Expr) :=
-  match decl with
-  | Declaration.defnDecl d => some (d.name, d.type, d.value)
-  | Declaration.thmDecl  d => some (d.name, d.type, d.value)
-  | _ => none
+structure NameTypeValue : Type where
+  name  : Name
+  type  : Expr
+  value : Expr
+  deriving Inhabited
 
-def updateNameTypeValue (decl : Declaration) (name : Name) (type value : Expr) : Declaration :=
+def extractNameTypeValue (decl : Declaration) : NameTypeValue :=
   match decl with
-  | Declaration.defnDecl d => Declaration.defnDecl { d with name := name, type := type, value := value }
-  | Declaration.thmDecl  d => Declaration.thmDecl  { d with name := name, type := type, value := value }
+  | Declaration.defnDecl d => ⟨d.name, d.type, d.value⟩
+  | Declaration.thmDecl  d => ⟨d.name, d.type, d.value⟩
+  | _ => panic! "shouldn't happen"
+
+def updateNameTypeValue (decl : Declaration) (ntv : NameTypeValue) : Declaration :=
+  match decl with
+  | Declaration.defnDecl d => Declaration.defnDecl { d with name := ntv.name, type := ntv.type, value := ntv.value }
+  | Declaration.thmDecl  d => Declaration.thmDecl  { d with name := ntv.name, type := ntv.type, value := ntv.value }
   | _ => panic! "shouldn't be possible"
+
+def mkNary (op : Name) (xs : Array Expr) : Expr := do
+  let mut e := xs[0]
+  for i in [1:xs.size] do
+    e := mkAppN (mkConst op) #[e, xs[i]]
+  pure e
+
+def extractNary (op : Name) (e₀ : Expr) : Array Expr := do
+  let mut  e := e₀
+  let mut xs := #[]
+  while (e.isAppOfArity op 2) do
+    xs := xs.push (e.getArg! 2)
+    e  := e.getArg! 1
+  pure xs.reverse
+
+def processOpaque (od : OpaqueDeclaration) : PortM Unit := do
+  let s ← get
+  let f n := translateName s (← getEnv) n
+
+  match od.decl with
+  | Declaration.defnDecl d =>
+    let targetName : Name := f d.name
+
+    let dname : Name := targetName ++ `_original
+    let dtype : Expr ← translate d.type
+    let dval  : Expr ← translate d.value
+
+    addDeclLoud dname $ Declaration.defnDecl { d with
+      name        := dname,
+      type        := dtype,
+      value       := dval
+    }
+
+    let targetLemNames : Array Name := od.eqnLemmas.map fun eqnLemma => f eqnLemma.names.head!
+
+    let lemmaNTVs : Array NameTypeValue ← od.eqnLemmas.mapM fun eqnLemma => do
+      let ⟨lname, ltype, lval⟩ := extractNameTypeValue eqnLemma
+      let lname : Name := f lname ++ `original
+      let ltype : Expr := (← translate ltype).replaceConstNames fun n => if n == targetName then dname else n
+      let lval  : Expr := (← translate lval).replaceConstNames fun n => if n == targetName then dname else n
+      addDeclLoud lname $ updateNameTypeValue od.eqnLemmas[0] ⟨lname, ltype, lval⟩
+      pure ⟨lname, ltype, lval⟩
+
+    let allLemmaType : Expr := mkNary `And $ lemmaNTVs.map fun ⟨_, ltype, _⟩ => ltype
+
+    let atype : Expr ← liftMetaM $ mkArrow dtype (mkSort levelZero)
+    let aval  : Expr ← liftMetaM $ do
+      withLocalDeclD `_f dtype fun x =>
+        mkLambdaFVars #[x] $ allLemmaType.replace fun e => if e.isConstOf targetName then some x else none
+
+    let lps : List Level := d.levelParams.map mkLevelParam
+
+    let cname : Name := targetName ++ `_opaque
+    let ctype : Expr ← liftMetaM $ mkAppM `Subtype #[aval]
+
+    let allLemmaValue : Expr := mkNary `And.mk $ lemmaNTVs.map fun ⟨lname, _, _⟩ => mkConst lname lps
+
+    let cval  : Expr ← liftMetaM $ mkAppOptM `Subtype.mk #[none, some aval, some (mkConst dname lps), some allLemmaValue]
+
+      -- println! "[cval ] {cname} {cval}"
+      -- println! "[cname] {cname} \n\n: {ctype} \n\n := {cval}"
+
+    let cdecl : Declaration := Declaration.opaqueDecl {
+      name        := cname,
+      levelParams := d.levelParams,
+      type        := ctype,
+      value       := cval,
+      isUnsafe    := false
+    }
+
+    addDeclLoud cname cdecl
+
+    let cexpr : Expr := mkConst cname $ d.levelParams.map mkLevelParam
+
+    addDeclLoud dname $ Declaration.defnDecl { d with
+      name  := targetName,
+      type  := dtype,
+      value := (← liftMetaM $ mkAppM `Subtype.val #[mkConst cname lps]),
+      hints := ReducibilityHints.opaque
+    }
+
+    -- TODO:
+    throwError "current spot: iterate over the lemmas"
+/-
+      addDeclLoud lname $ updateNameTypeValue od.eqnLemmas[0]
+          targetLemName
+          ltype
+          (← liftMetaM $ mkAppM `Subtype.property #[mkConst cname lps])
+
+      println! "[opaque] Finished processing {targetName}!"
+-/
+    | _ => throwError s!"[opaqueDecl] {od.eqnLemmas.size}"
+
 
 def processActionItem (actionItem : ActionItem) : PortM Unit := do
   modify λ s => { s with decl := actionItem.toDecl }
@@ -188,74 +287,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     -- def foo.new : foo.orig.type := foo.impl.1
     -- def foo.new.equation : foo.orig.equation.abstract foo.new := foo.impl.2
     if od.eqnLemmas.size == 0 then throwError s!"opaqueDecl must have eqnLemmas"
-    match (od.decl, extractNameTypeValue od.eqnLemmas[0]) with
-    | (Declaration.defnDecl d, some (lname, ltype, lval)) =>
-      let targetName    : Name := f d.name
-      let targetLemName : Name := f lname
-
-      let dname : Name := targetName ++ `_original
-      let dtype : Expr ← translate d.type
-      let dval  : Expr ← translate d.value
-
-      addDeclLoud dname $ Declaration.defnDecl { d with
-        name        := dname,
-        type        := dtype,
-        value       := dval
-      }
-
-      let lname : Name := targetLemName ++ `original
-      let ltype : Expr := (← translate ltype).replaceConstNames fun n => if n == targetName then dname else n
-      let lval  : Expr := (← translate lval).replaceConstNames fun n => if n == targetName then dname else n
-
-      -- println! "[lname] {lname} \n\n : {ltype} \n\n := {lval}"
-
-      addDeclLoud lname $ updateNameTypeValue od.eqnLemmas[0] lname ltype lval
-
-      -- println! "[dname] {dname} \n\n : {dtype} \n\n := {dval}"
-
-      let atype : Expr ← liftMetaM $ mkArrow dtype (mkSort levelZero)
-      let aval  : Expr ← liftMetaM $ do
-        withLocalDeclD `_f dtype fun x =>
-          mkLambdaFVars #[x] $ ltype.replace fun e => if e.isConstOf targetName then some x else none
-
-      -- println! "[abstr] {atype} \n\n := {aval}"
-
-      let lps : List Level := d.levelParams.map mkLevelParam
-
-      let cname : Name := targetName ++ `_opaque
-      let ctype : Expr ← liftMetaM $ mkAppM `Subtype #[aval]
-      let cval  : Expr ← liftMetaM $ mkAppOptM `Subtype.mk #[none, some aval, some (mkConst dname lps), some (mkConst lname lps)]
-
-      -- println! "[cval ] {cname} {cval}"
-      -- println! "[cname] {cname} \n\n: {ctype} \n\n := {cval}"
-
-      let cdecl : Declaration := Declaration.opaqueDecl {
-        name        := cname,
-        levelParams := d.levelParams,
-        type        := ctype,
-        value       := cval,
-        isUnsafe    := false
-      }
-
-      addDeclLoud cname cdecl
-
-      let cexpr : Expr := mkConst cname $ d.levelParams.map mkLevelParam
-
-      addDeclLoud dname $ Declaration.defnDecl { d with
-        name  := targetName,
-        type  := dtype,
-        value := (← liftMetaM $ mkAppM `Subtype.val #[mkConst cname lps]),
-        hints := ReducibilityHints.opaque
-      }
-
-      addDeclLoud lname $ updateNameTypeValue od.eqnLemmas[0]
-          targetLemName
-          ltype
-          (← liftMetaM $ mkAppM `Subtype.property #[mkConst cname lps])
-
-      println! "[opaque] Finished processing {targetName}!"
-
-    | _ => throwError s!"[opaqueDecl] {od.eqnLemmas.size}"
+    processOpaque od
 
   | ActionItem.decl d => do
     match d with
