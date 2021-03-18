@@ -66,7 +66,10 @@ def translate (e : Expr) : PortM Expr := do
         let type     := e.getArg! 0
         let tacName3 ← Meta.reduce (e.getArg! 1)
         try
-          let tacName ← decodeName tacName3
+          let tacNameOld ← decodeName tacName3
+          -- This may not always be the right decision, i.e. one of the tactics may be already in Lean4
+          -- currently, mathlib would need to alias that tactic in the Mathlib namespace
+          let tacName := translateName s (← getEnv) tacNameOld
           let substr : Expr := mkAppN (mkConst `String.toSubstring) #[toExpr $ tacName.toString]
           -- Note: we currently hardcode `obviously`
           -- if Mathlib really uses other tactics here, we can parse the name from the auto-ported Lean3 string
