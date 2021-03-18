@@ -59,8 +59,13 @@ structure ProjectionInfo : Type where
   fromClass : Bool
   deriving Repr
 
+structure OpaqueDeclaration : Type where
+  decl      : Declaration
+  eqnLemmas : Array Declaration -- we only support |eqnLemmas| = 1
+
 inductive ActionItem : Type
 | decl           : Declaration → ActionItem
+| opaqueDecl     : OpaqueDeclaration → ActionItem
 | «class»        : (c : Name) → ActionItem
 | «instance»     : (c i : Name) → (prio : Nat) → ActionItem
 | simp           : (name : Name) → (prio : Nat) → ActionItem
@@ -70,12 +75,11 @@ inductive ActionItem : Type
 | «mixfix»       : MixfixKind → Name → Nat → String → ActionItem
 | «export»       : ExportDecl → ActionItem
 | «projection»   : ProjectionInfo → ActionItem
+  deriving Inhabited
 
-def ActionItem.toDecl : ActionItem → Name
-  | ActionItem.decl d =>
-    match d.names with
-    | []   => `nodecl
-    | n::_ => n
+partial def ActionItem.toDecl : ActionItem → Name
+  | ActionItem.decl d             => d.names.head!
+  | ActionItem.opaqueDecl od      => od.decl.names.head!
   | ActionItem.class c            => c
   | ActionItem.instance _ i _     => i
   | ActionItem.simp n _           => n
@@ -84,6 +88,6 @@ def ActionItem.toDecl : ActionItem → Name
   | ActionItem.reducibility n _   => n
   | ActionItem.mixfix _ n _ _     => n
   | ActionItem.export _           => `inExport
-  | ActionItem.projection p        => p.projName
+  | ActionItem.projection p       => p.projName
 
 end MathPort

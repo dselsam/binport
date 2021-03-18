@@ -18,11 +18,6 @@ structure Context where
   proofs : Bool
   path   : Path34
 
-structure ExportInfo where
-  names  : Array Name        := #[Name.anonymous]
-  levels : Array Level       := #[levelZero]
-  exprs  : Array Expr        := #[]
-
 structure Rules where
   newNames     : HashMap Name Name := {}
   ignored      : HashSet Name      := {}
@@ -30,7 +25,7 @@ structure Rules where
   neverSorries : HashSet Name      := {} -- e.g. of_as_true
   noInsts      : HashSet Name      := {}
 
-structure State extends ExportInfo, Rules where
+structure State extends Rules where
   -- for processing (not parsing)
   decl           : Name                     := `unknown
   nNotations     : Nat                      := 0

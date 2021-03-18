@@ -154,6 +154,9 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     -- setEnv $ addProtected (← getEnv) (f n)
     pure ()
 
+  | ActionItem.opaqueDecl od => do
+    throwError s!"opaqueDecl NYI"
+
   | ActionItem.decl d => do
     match d with
     | Declaration.axiomDecl ax => do

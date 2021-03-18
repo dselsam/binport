@@ -4,45 +4,66 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam, Gabriel Ebner
 -/
 import MathPort.Util
-import MathPort.Basic
 import MathPort.ActionItem
 import Lean
 import Std.Data.HashSet
 import Std.Data.HashMap
 
 namespace MathPort
+namespace Parser
 
 open Lean
+open Std (HashSet mkHashSet HashMap mkHashMap)
 
-private def nat2expr (i : Nat) : PortM Expr := do
+structure Context where
+
+structure State where
+  -- For reconstructing terms
+  names  : Array Name  := #[Name.anonymous]
+  levels : Array Level := #[levelZero]
+  exprs  : Array Expr  := #[]
+
+  -- For batching irreducible definitions into constants
+  prevTopDecl : Name         := Name.anonymous
+  opaqueDecls : HashSet Name := {}
+
+  -- Accumulated (ordered) action tems
+  actionItems : Array ActionItem := #[]
+
+abbrev ParseM := ReaderT Context $ StateRefT State IO
+
+def ParseM.toIO (x : ParseM α) (ctx : Context := {}) (s : State := {}) : IO α :=
+  (x ctx).run' s
+
+private def nat2expr (i : Nat) : ParseM Expr := do
   let s ← get
   if i < s.exprs.size then return s.exprs[i]
-  throwError s!"[nat2expr] {i} > {s.exprs.size}"
+  throw $ IO.userError s!"[nat2expr] {i} > {s.exprs.size}"
 
-private def nat2level (i : Nat) : PortM Level := do
+private def nat2level (i : Nat) : ParseM Level := do
   let s ← get
   if i < s.levels.size then return s.levels[i]
-  throwError s!"[nat2level] {i} > {s.levels.size}"
+  throw $ IO.userError s!"[nat2level] {i} > {s.levels.size}"
 
-private def nat2name (i : Nat) : PortM Name := do
+private def nat2name (i : Nat) : ParseM Name := do
   let s ← get
   if i < s.names.size then return s.names[i]
-  throwError s!"[nat2name] {i} > {s.names.size}"
+  throw $ IO.userError s!"[nat2name] {i} > {s.names.size}"
 
-private def parseNat (s : String) : PortM Nat :=
+private def parseNat (s : String) : ParseM Nat :=
   match s.toNat? with
   | some k => pure k
-  | none   => throwError s!"String '{s}' cannot be converted to Nat"
+  | none   => throw $ IO.userError s!"String '{s}' cannot be converted to Nat"
 
-private def parseBool (s : String) : PortM Bool :=
+private def parseBool (s : String) : ParseM Bool :=
   match s.toNat? with
   | some k =>
     if k == 1 then true
     else if k == 0 then false
-    else throwError s!"String '{s}' cannot be converted to Bool"
-  | none            => throwError s!"String '{s}' cannot be converted to Bool"
+    else throw $ IO.userError s!"String '{s}' cannot be converted to Bool"
+  | none            => throw $ IO.userError s!"String '{s}' cannot be converted to Bool"
 
-private def parseHints (s : String) : PortM ReducibilityHints := do
+private def parseHints (s : String) : ParseM ReducibilityHints := do
   match s with
   | "A" => ReducibilityHints.abbrev
   | "O" => ReducibilityHints.opaque
@@ -51,47 +72,59 @@ private def parseHints (s : String) : PortM ReducibilityHints := do
     let k := n % UInt32.size
     ReducibilityHints.regular ⟨⟨k, sorryAx (Less k UInt32.size)⟩⟩
 
-private def parseMixfixKind (kind : String) : PortM MixfixKind :=
+private def parseMixfixKind (kind : String) : ParseM MixfixKind :=
   match kind with
   | "prefix"    => pure MixfixKind.prefix
   | "postfix"   => pure MixfixKind.postfix
   | "infixl"    => pure MixfixKind.infixl
   | "infixr"    => pure MixfixKind.infixr
   | "singleton" => pure MixfixKind.singleton
-  | _           => throwError s!"invalid mixfix kind {kind}"
+  | _           => throw $ IO.userError s!"invalid mixfix kind {kind}"
 
-private def str2expr (s : String)  : PortM Expr := parseNat s >>= nat2expr
-private def str2level (s : String) : PortM Level := parseNat s >>= nat2level
-private def str2name  (s : String) : PortM Name  := parseNat s >>= nat2name
+private def str2expr (s : String)  : ParseM Expr := parseNat s >>= nat2expr
+private def str2level (s : String) : ParseM Level := parseNat s >>= nat2level
+private def str2name  (s : String) : ParseM Name  := parseNat s >>= nat2name
 
 
-private def writeName (i : String) (n : Name) : PortM Unit := do
+private def writeName (i : String) (n : Name) : ParseM Unit := do
   let i ← parseNat i
   modify $ λ s => { s with names := s.names.write i n }
 
-private def writeLevel (i : String) (l : Level) : PortM Unit := do
+private def writeLevel (i : String) (l : Level) : ParseM Unit := do
   let i ← parseNat i
   modify $ λ s => { s with levels := s.levels.write i l }
 
-private def writeExpr (i : String) (e : Expr) : PortM Unit := do
+private def writeExpr (i : String) (e : Expr) : ParseM Unit := do
   let i ← parseNat i
   modify $ λ s => { s with exprs := s.exprs.write i e }
 
-private def parseReducibilityStatus : String → PortM ReducibilityStatus
+private def parseReducibilityStatus : String → ParseM ReducibilityStatus
 | "Reducible"     => ReducibilityStatus.reducible
 | "Semireducible" => ReducibilityStatus.semireducible
 | "Irreducible"   => ReducibilityStatus.irreducible
-| s               => throwError s!"unknown reducibility status {s}"
+| s               => throw $ IO.userError s!"unknown reducibility status {s}"
 
-def processLine (line : String) : PortM (List ActionItem) := do
+private def parseBinderInfo : String → ParseM BinderInfo
+  | "#BD" => BinderInfo.default
+  | "#BI" => BinderInfo.implicit
+  | "#BS" =>
+    -- Lean4 is missing support for strictImplicit, so we convert here
+    BinderInfo.implicit -- BinderInfo.strictImplicit
+  | "#BC" => BinderInfo.instImplicit
+  | s     => throw $ IO.userError s!"[parseBinderInfo] unexpected: {s}"
+
+
+def emit (item : ActionItem) : ParseM Unit :=
+  modify fun s => { s with actionItems := s.actionItems.push item }
+
+def processLine (line : String) : ParseM Unit := do
   let tokens := line.splitOn " "
   match tokens with
-  | [] => throwError "[processLine] line has no tokens"
-  | (t::_) => if t.isNat then processTerm tokens *> pure []
-              else processMisc tokens
+  | [] => throw $ IO.userError "[processLine] line has no tokens"
+  | (t::_) => if t.isNat then processTerm tokens else processMisc tokens
 
   where
-    processTerm (tokens : List String) : PortM Unit := do
+    processTerm (tokens : List String) : ParseM Unit := do
       match tokens with
       | (i :: "#NS" :: j :: rest)  => writeName  i $ (← str2name j).mkStr (" ".intercalate rest)
       | [i, "#NI", j, k]           => writeName  i $ (← str2name j).mkNum (← parseNat k)
@@ -106,40 +139,40 @@ def processLine (line : String) : PortM (List ActionItem) := do
       | [i, "#EL", bi, j₁, j₂, j₃] => writeExpr  i $ mkLambda (← str2name j₁) (← parseBinderInfo bi) (← str2expr j₂) (← str2expr j₃)
       | [i, "#EP", bi, j₁, j₂, j₃] => writeExpr  i $ mkForall (← str2name j₁) (← parseBinderInfo bi) (← str2expr j₂) (← str2expr j₃)
       | [i, "#EZ", j₁, j₂, j₃, j₄] => writeExpr  i $ mkLet (← str2name j₁) (← str2expr j₂) (← str2expr j₃) (← str2expr j₄)
-      | _                          => throwError s!"[processTerm] unexpected '{tokens}'"
+      | _                          => throw $ IO.userError s!"[processTerm] unexpected '{tokens}'"
 
-    processMisc (tokens : List String) : PortM (List ActionItem) := do
+    processMisc (tokens : List String) : ParseM Unit := do
       match tokens with
       | ("#AX" :: n :: t :: ups) =>
         let (n, t, ups) ← ((← str2name n), (← str2expr t), (← ups.mapM str2name))
         modify fun s => { s with prevTopDecl := n }
-        pure [ActionItem.decl $ Declaration.axiomDecl {
+        emit $ ActionItem.decl $ Declaration.axiomDecl {
           name        := n,
           levelParams := ups,
           type        := t,
           isUnsafe    := false,
-        }]
+        }
 
       | ("#DEF" :: n :: thm :: h :: t :: v :: ups) =>
         let (n, h, t, v, ups) ← ((← str2name n), (← parseHints h), (← str2expr t), (← str2expr v), (← ups.mapM str2name))
         if (isEquationLemma? n).isNone then modify fun s => { s with prevTopDecl := n }
         let thm := (← parseNat thm) > 0
         if thm then
-          pure [ActionItem.decl $ Declaration.thmDecl {
+          emit $ ActionItem.decl $ Declaration.thmDecl {
             name        := n,
             levelParams := ups,
             type        := t,
             value       := v
-          }]
+          }
         else
-          pure [ActionItem.decl $ Declaration.defnDecl {
+          emit $ ActionItem.decl $ Declaration.defnDecl {
             name        := n,
             levelParams := ups,
             type        := t,
             value       := v,
             safety      := DefinitionSafety.safe, -- TODO: confirm only safe things are being exported
             hints       := h,
-          }]
+          }
 
       | ("#IND" :: nps :: n :: t :: nis :: rest) =>
         let (nps, n, t, nis) ← ((← parseNat nps), (← str2name n), (← str2expr t), (← parseNat nis))
@@ -147,56 +180,56 @@ def processLine (line : String) : PortM (List ActionItem) := do
         let (is, ups) := rest.splitAt (2 * nis)
         let lparams ← ups.mapM str2name
         let ctors ← parseIntros is
-        pure [ActionItem.decl $ Declaration.inductDecl lparams nps [{
+        emit $ ActionItem.decl $ Declaration.inductDecl lparams nps [{
           name := n,
           type := t,
           ctors := ctors
-          }] false]
+          }] false
 
-      | ["#QUOT"]                                => pure []
+      | ["#QUOT"]                                => pure ()
 
-      | ("#MIXFIX" :: kind :: n :: prec :: tok)  => pure [ActionItem.mixfix (← parseMixfixKind kind) (← str2name n) (← parseNat prec) (" ".intercalate tok)]
+      | ("#MIXFIX" :: kind :: n :: prec :: tok)  => emit $ ActionItem.mixfix (← parseMixfixKind kind) (← str2name n) (← parseNat prec) (" ".intercalate tok)
 
-      | ["#PRIVATE", pretty, real]               => pure [ActionItem.private (← str2name pretty) (← str2name real)]
-      | ["#PROTECTED", n]                        => pure [ActionItem.protected (← str2name n)]
+      | ["#PRIVATE", pretty, real]               => emit $ ActionItem.private (← str2name pretty) (← str2name real)
+      | ["#PROTECTED", n]                        => emit $ ActionItem.protected (← str2name n)
 
-      | ("#POS_INFO" :: _)                       => pure []
+      | ("#POS_INFO" :: _)                       => pure ()
 
       -- TODO: look at the 'deleted' bit
       | ("#ATTR" :: a :: p :: n :: _ :: rest)    => do
         let (attrName, p, n) := (← str2name a, ← parseNat p, ← str2name n)
         if attrName == "simp" then
-          pure [ActionItem.simp n p]
+          emit $ ActionItem.simp n p
         else if attrName == "reducibility" then
           match rest with
           | [status] => do
             let status ← parseReducibilityStatus status
             if n == (← get).prevTopDecl ∧ status == ReducibilityStatus.irreducible then
               modify fun s => { s with opaqueDecls := s.opaqueDecls.insert n }
-            pure [ActionItem.reducibility n status]
-          | _        => throwError s!"[reducibility] expected name"
+            emit $ ActionItem.reducibility n status
+          | _        => throw $ IO.userError s!"[reducibility] expected name"
         else
-          pure []
+          pure ()
 
-      | ["#CLASS", c]                => pure [ActionItem.class (← str2name c)]
-      | ["#CLASS_INSTANCE", c, i, p] => pure [ActionItem.instance (← str2name c) (← str2name i) (← parseNat p)]
+      | ["#CLASS", c]                => emit $ ActionItem.class (← str2name c)
+      | ["#CLASS_INSTANCE", c, i, p] => emit $ ActionItem.instance (← str2name c) (← str2name i) (← parseNat p)
 
-      | ("#CLASS_TRACK_ATTR" :: _)               => pure []
-      | ("#AUXREC" :: _)                         => pure []
-      | ("#NEW_NAMESPACE" :: _)                  => pure []
-      | ("#NONCOMPUTABLE" :: _)                  => pure []
-      | ("#NOCONF" :: _)                         => pure []
-      | ("#TOKEN" :: _)                          => pure []
-      | ("#USER_ATTR" :: _)                      => pure []
+      | ("#CLASS_TRACK_ATTR" :: _)               => pure ()
+      | ("#AUXREC" :: _)                         => pure ()
+      | ("#NEW_NAMESPACE" :: _)                  => pure ()
+      | ("#NONCOMPUTABLE" :: _)                  => pure ()
+      | ("#NOCONF" :: _)                         => pure ()
+      | ("#TOKEN" :: _)                          => pure ()
+      | ("#USER_ATTR" :: _)                      => pure ()
 
       | ["#PROJECTION", proj, mk, nParams, i, ii] => do
-        pure [ActionItem.projection {
+        emit $ ActionItem.projection {
           projName     := ← str2name proj,
           ctorName     := ← str2name mk,
           nParams      := ← parseNat nParams,
           index        := ← parseNat i,
           fromClass    := ← parseBool ii
-        }]
+        }
 
       | ("#EXPORT_DECL" :: currNs :: ns :: nsAs :: hadExplicit :: nRenames :: rest) => do
         let rest := rest.toArray
@@ -221,28 +254,61 @@ def processLine (line : String) : PortM (List ActionItem) := do
           renames     := renames,
           exceptNames := exceptNames
         }
-        pure [ActionItem.export exportDecl]
+        emit $ ActionItem.export exportDecl
 
       | _ =>
         println! "[processLine] unexpected case: '{line}'\n{tokens}"
-        pure []
+        pure ()
 
-    parseIntros : List String → PortM (List Constructor)
+    parseIntros : List String → ParseM (List Constructor)
       | (n :: t :: is) => do
         let rest ← parseIntros is
         pure $ { name := (← str2name n), type := ← str2expr t } :: rest
 
       | _              => []
 
-    parseBinderInfo : String → PortM BinderInfo
-      | "#BD" => BinderInfo.default
-      | "#BI" => BinderInfo.implicit
+def collectOpaque (opaqueDecls : HashSet Name) (actionItems : Array ActionItem) : Array ActionItem := do
+  let mut newItems   : Array ActionItem := #[]
+  let mut decl2index : HashMap Name Nat := {}
 
-      | "#BS" =>
-        -- Lean4 is missing support for strictImplicit, so we convert here
-        BinderInfo.implicit -- BinderInfo.strictImplicit
+  for actionItem in actionItems do
+    match actionItem with
+    | ActionItem.decl d =>
+      let name := d.names.head!
+      if opaqueDecls.contains name then
+        decl2index := decl2index.insert name newItems.size
+        newItems := newItems.push $ ActionItem.opaqueDecl (OpaqueDeclaration.mk d #[])
+      else
+        match isEquationLemma? name with
+        | some pfix =>
+          match decl2index.find? pfix with
+          | some i => newItems := newItems.modify i fun
+              | ActionItem.opaqueDecl od => ActionItem.opaqueDecl ⟨od.decl, od.eqnLemmas.push d⟩
+              | _ => panic! "should not happen"
+          | _      => newItems := newItems.push actionItem
+        | _ => newItems := newItems.push actionItem
+    | _ => newItems := newItems.push actionItem
 
-      | "#BC" => BinderInfo.instImplicit
-      | s     => throwError s!"[parseBinderInfo] unexpected: {s}"
+  return newItems
+
+
+
+
+
+
+def parseExportFile (h : IO.FS.Handle) : IO (Array ActionItem) := ParseM.toIO $ do
+  -- discard imports
+  let _ ← h.getLine
+  -- first pass
+  while (not (← h.isEof)) do
+    let line := (← h.getLine).dropRightWhile λ c => c == '\n'
+    if line == "" then continue
+    processLine line
+
+  pure (← get).actionItems
+
+end Parser
+
+export Parser (parseExportFile)
 
 end MathPort
