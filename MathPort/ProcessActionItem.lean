@@ -147,7 +147,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
                 catch ex => warn ex
 
   | ActionItem.private _ _ => pure ()
-  | ActionItem.protected n =>
+    | ActionItem.protected n =>
     -- TODO: have the semantics changed here?
     -- When we mark `nat.has_one` as `Protected`, the kernel
     -- fails to find it when typechecking definitions (but not theorems)
@@ -155,7 +155,66 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     pure ()
 
   | ActionItem.opaqueDecl od => do
-    throwError s!"opaqueDecl NYI"
+    -- See https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/mathport/near/225031878
+    -- Example:
+    -- def foo.orig.type : Type := Nat → Nat
+    -- def foo.orig.val  : foo.orig.type := fun (n : Nat) => n + 1
+
+    -- def foo.orig.equation.type : Prop := ∀ n, foo.orig.val n = n + 1
+    -- def foo.orig.equation.val : foo.orig.equation.type := λ n => rfl
+
+    -- -- achieved by abstracting `foo.orig.val` from `foo.orig.equation.type`
+    -- def foo.orig.equation.abstract (ϕ : foo.orig.type) : Prop := ∀ n, ϕ n = n + 1
+
+    -- constant foo.impl : Subtype foo.orig.equation.abstract :=
+    --   Subtype.mk foo.orig.val foo.orig.equation.val
+
+    -- def foo.new : foo.orig.type := foo.impl.1
+    -- def foo.new.equation : foo.orig.equation.abstract foo.new := foo.impl.2
+    if od.eqnLemmas.size ≠ 1 then throwError s!"opaqueDecl must have exactly 1 eqnLemma, {od.eqnLemmas.size}"
+    match (od.decl, od.eqnLemmas[0]) with
+    | (Declaration.defnDecl d, Declaration.thmDecl l) =>
+      let dname : Name := f d.name
+      let dtype : Expr ← translate d.type
+      let dval  : Expr ← translate d.value
+
+      let lname : Name := f l.name
+      let ltype : Expr ← translate l.type
+      let lval  : Expr ← translate l.value
+
+      let atype : Expr ← liftMetaM $ mkArrow dtype (mkSort levelZero)
+      let aval  : Expr := mkLambda `_f BinderInfo.default dtype $ ltype.replace fun e => if e.isAppOf dname then some (mkBVar 0) else none
+
+      let cname : Name := dname ++ `_opaque
+      let ctype : Expr ← liftMetaM $ mkAppM `Subtype #[aval]
+      let cval  : Expr ← liftMetaM $ mkAppM `Subtype.mk #[dval, lval]
+
+      let cdecl : Declaration := Declaration.opaqueDecl {
+        name        := cname,
+        levelParams := d.levelParams,
+        type        := ctype,
+        value       := cval,
+        isUnsafe    := false
+      }
+
+      addDeclLoud cname cdecl
+
+      let cexpr : Expr := mkConst cname $ d.levelParams.map mkLevelParam
+
+      addDeclLoud dname $ Declaration.defnDecl { d with
+        name  := dname,
+        type  := dtype,
+        value := (← liftMetaM $ mkAppM `Subtype.val #[cexpr]),
+        hints := ReducibilityHints.opaque
+      }
+
+      addDeclLoud lname $ Declaration.thmDecl { l with
+        name  := lname,
+        type  := ltype,
+        value := (← liftMetaM $ mkAppM `Subtype.property #[cexpr])
+      }
+
+    | _ => throwError s!"[opaqueDecl] unexpected"
 
   | ActionItem.decl d => do
     match d with

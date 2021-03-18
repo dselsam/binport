@@ -24,8 +24,9 @@ structure State where
   exprs  : Array Expr  := #[]
 
   -- For batching irreducible definitions into constants
-  prevTopDecl : Name         := Name.anonymous
-  opaqueDecls : HashSet Name := {}
+  -- prevTopDecl : Name                  := Name.anonymous
+  irreducibles : HashSet Name          := {}
+  eqnLemmas    : HashSet (Name × Name) := {}
 
   -- Accumulated (ordered) action tems
   actionItems : Array ActionItem := #[]
@@ -145,7 +146,6 @@ def processLine (line : String) : ParseM Unit := do
       match tokens with
       | ("#AX" :: n :: t :: ups) =>
         let (n, t, ups) ← ((← str2name n), (← str2expr t), (← ups.mapM str2name))
-        modify fun s => { s with prevTopDecl := n }
         emit $ ActionItem.decl $ Declaration.axiomDecl {
           name        := n,
           levelParams := ups,
@@ -155,8 +155,8 @@ def processLine (line : String) : ParseM Unit := do
 
       | ("#DEF" :: n :: thm :: h :: t :: v :: ups) =>
         let (n, h, t, v, ups) ← ((← str2name n), (← parseHints h), (← str2expr t), (← str2expr v), (← ups.mapM str2name))
-        if (isEquationLemma? n).isNone then modify fun s => { s with prevTopDecl := n }
         let thm := (← parseNat thm) > 0
+
         if thm then
           emit $ ActionItem.decl $ Declaration.thmDecl {
             name        := n,
@@ -176,7 +176,6 @@ def processLine (line : String) : ParseM Unit := do
 
       | ("#IND" :: nps :: n :: t :: nis :: rest) =>
         let (nps, n, t, nis) ← ((← parseNat nps), (← str2name n), (← str2expr t), (← parseNat nis))
-        modify fun s => { s with prevTopDecl := n }
         let (is, ups) := rest.splitAt (2 * nis)
         let lparams ← ups.mapM str2name
         let ctors ← parseIntros is
@@ -204,9 +203,8 @@ def processLine (line : String) : ParseM Unit := do
           match rest with
           | [status] => do
             let status ← parseReducibilityStatus status
-            if n == (← get).prevTopDecl ∧ status == ReducibilityStatus.irreducible then
-              println! "[opaque] {n}"
-              modify fun s => { s with opaqueDecls := s.opaqueDecls.insert n }
+            if status == ReducibilityStatus.irreducible then
+              modify fun s => { s with irreducibles := s.irreducibles.insert n }
             emit $ ActionItem.reducibility n status
           | _        => throw $ IO.userError s!"[reducibility] expected name"
         else
@@ -222,6 +220,11 @@ def processLine (line : String) : ParseM Unit := do
       | ("#NOCONF" :: _)                         => pure ()
       | ("#TOKEN" :: _)                          => pure ()
       | ("#USER_ATTR" :: _)                      => pure ()
+
+      | ["#EQUATION", n, ln]                     => do
+        let (n, ln) := (← str2name n, ← str2name ln)
+        modify fun s => { s with eqnLemmas := s.eqnLemmas.insert (n, ln) }
+        emit $ ActionItem.eqnLemma n ln
 
       | ["#PROJECTION", proj, mk, nParams, i, ii] => do
         emit $ ActionItem.projection {
@@ -284,9 +287,11 @@ def collectOpaque : ParseM (Array ActionItem) := do
         match isEquationLemma? name with
         | some pfix =>
           match decl2index.find? pfix with
-          | some i => newItems := newItems.modify i fun
+          | some i => do
+            newItems := newItems.modify i fun
               | ActionItem.opaqueDecl od => ActionItem.opaqueDecl ⟨od.decl, od.eqnLemmas.push d⟩
               | _ => panic! "should not happen"
+            println! "[opaque] ADD {pfix} {name}"
           | _      => newItems := newItems.push actionItem
         | _ => newItems := newItems.push actionItem
     | _ => newItems := newItems.push actionItem

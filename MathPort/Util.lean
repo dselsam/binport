@@ -66,11 +66,11 @@ section Equation
 
 open Lean
 
--- TODO: imprecise
-def isEquationLemma? (n : Name) : Option Name := do
-  -- example: list.nth.equations._eqn_1
-  let n₁ : Name := n.getPrefix
-  if n₁.isStr && n₁.getString! == "equations" then n₁.getPrefix else none
+def buildSimpleEquationLemma (type val : Expr) : MetaM (Expr × Expr) := do
+  -- def forallTelescope (type : Expr) (k : Array Expr → Expr → n α) : n α :=
+  let etype ← Meta.forallTelescope type fun xs body =>
+
+
 
 end Equation
 
@@ -183,6 +183,5 @@ partial def decodeName (e : Expr) : MetaM Name := do
     Name.mkNum (← decodeName (e.getArg! 1)) (← decodeUnsigned (e.getArg! 0))
   else
     throwError "[decodeName] failed on {e}"
-
 
 end DecodeName

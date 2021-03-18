@@ -68,6 +68,7 @@ inductive ActionItem : Type
 | opaqueDecl     : OpaqueDeclaration → ActionItem
 | «class»        : (c : Name) → ActionItem
 | «instance»     : (c i : Name) → (prio : Nat) → ActionItem
+| eqnLemma       : (fname lname : Name) → ActionItem
 | simp           : (name : Name) → (prio : Nat) → ActionItem
 | «private»      : (pretty real : Name) → ActionItem
 | «protected»    : (name : Name) → ActionItem
@@ -82,6 +83,7 @@ partial def ActionItem.toDecl : ActionItem → Name
   | ActionItem.opaqueDecl od      => od.decl.names.head!
   | ActionItem.class c            => c
   | ActionItem.instance _ i _     => i
+  | ActionItem.eqnLemma n _       => n
   | ActionItem.simp n _           => n
   | ActionItem.private _ real     => real
   | ActionItem.protected n        => n
