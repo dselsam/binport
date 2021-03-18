@@ -26,15 +26,10 @@ structure Rules where
   noInsts      : HashSet Name      := {}
 
 structure State extends Rules where
-  -- for processing (not parsing)
-  decl           : Name                     := `unknown
-  nNotations     : Nat                      := 0
-
-  -- for parsing only (not processing), does not include equation lemmas
-  prevTopDecl    : Name                     := `unknown
-  -- must be declared irreducible before the next non-equation
-  opaqueDecls    : HashSet Name             := {}
-  name2equations : HashMap Name (List Name) := {}
+  decl       : Name                     := `unknown
+  nNotations : Nat                      := 0
+  eqnLemmas  : HashMap Name Name        := {} -- name2pfix, computed by parser
+  name2eqns  : HashMap Name (List Name) := {}
 
 abbrev PortM := ReaderT Context $ StateRefT State CommandElabM
 

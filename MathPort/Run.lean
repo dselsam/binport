@@ -67,7 +67,8 @@ def genOLeanFor (proofs : Bool) (target : Path34) : IO Unit := do
     let env₀ := env₀.setMainModule target.mrpath.toDotPath.path
     let _ ← PortM.toIO (ctx := { proofs := proofs, path := target }) (env := env₀) do
       parseRules rulesFilename
-      let actionItems ← liftM $ IO.FS.withFile target.toTLean IO.FS.Mode.read parseExportFile
+      let (actionItems, eqnLemmas) ← liftM $ IO.FS.withFile target.toTLean IO.FS.Mode.read parseExportFile
+      modify fun s => { s with eqnLemmas := eqnLemmas }
       for actionItem in actionItems do
         processActionItem actionItem
 

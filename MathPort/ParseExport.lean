@@ -25,8 +25,8 @@ structure State where
 
   -- For batching irreducible definitions into constants
   -- prevTopDecl : Name                  := Name.anonymous
-  irreducibles : HashSet Name          := {}
-  eqnLemmas    : HashSet (Name × Name) := {}
+  irreducibles : HashSet Name      := {}
+  eqnLemmas    : HashMap Name Name := {} -- name2pfix
 
   -- Accumulated (ordered) action tems
   actionItems : Array ActionItem := #[]
@@ -120,6 +120,7 @@ def emit (item : ActionItem) : ParseM Unit :=
 
 def processLine (line : String) : ParseM Unit := do
   let tokens := line.splitOn " "
+  println! "[tokens] {tokens}"
   match tokens with
   | [] => throw $ IO.userError "[processLine] line has no tokens"
   | (t::_) => if t.isNat then processTerm tokens else processMisc tokens
@@ -220,10 +221,12 @@ def processLine (line : String) : ParseM Unit := do
       | ("#NOCONF" :: _)                         => pure ()
       | ("#TOKEN" :: _)                          => pure ()
       | ("#USER_ATTR" :: _)                      => pure ()
+      | ("#RELATION" :: _)                       => pure ()
 
       | ["#EQUATION", n, ln]                     => do
         let (n, ln) := (← str2name n, ← str2name ln)
-        modify fun s => { s with eqnLemmas := s.eqnLemmas.insert (n, ln) }
+        println! "[equation] {n} {ln}"
+        modify fun s => { s with eqnLemmas := s.eqnLemmas.insert ln n }
         emit $ ActionItem.eqnLemma n ln
 
       | ["#PROJECTION", proj, mk, nParams, i, ii] => do
@@ -279,12 +282,12 @@ def collectOpaque : ParseM (Array ActionItem) := do
     match actionItem with
     | ActionItem.decl d =>
       let name := d.names.head!
-      if (← get).opaqueDecls.contains name then
+      if (← get).irreducibles.contains name then
         println! "[opaque] CREATE {name}"
         decl2index := decl2index.insert name newItems.size
         newItems := newItems.push $ ActionItem.opaqueDecl (OpaqueDeclaration.mk d #[])
       else
-        match isEquationLemma? name with
+        match (← get).eqnLemmas.find? name with
         | some pfix =>
           match decl2index.find? pfix with
           | some i => do
@@ -298,7 +301,7 @@ def collectOpaque : ParseM (Array ActionItem) := do
 
   return newItems
 
-def parseExportFile (h : IO.FS.Handle) : IO (Array ActionItem) := ParseM.toIO $ do
+def parseExportFile (h : IO.FS.Handle) : IO (Array ActionItem × HashMap Name Name) := ParseM.toIO $ do
   -- discard imports
   let _ ← h.getLine
   -- first pass
@@ -307,7 +310,9 @@ def parseExportFile (h : IO.FS.Handle) : IO (Array ActionItem) := ParseM.toIO $ 
     if line == "" then continue
     processLine line
   -- second pass
-  collectOpaque
+  let _ ← collectOpaque
+  pure ((← get).actionItems, (← get).eqnLemmas)
+  -- pure (← collectOpaque, (← get).eqnLemmas)
 
 end Parser
 

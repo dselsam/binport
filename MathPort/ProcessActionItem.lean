@@ -77,8 +77,8 @@ def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : P
   elabCommand stx
 
 def maybeRegisterEquation (n : Name) : PortM Unit := do
-  match isEquationLemma? n with
-  | some pfix => modify λ s => { s with name2equations := s.name2equations.insertWith (· ++ ·) pfix [n] }
+  match (← get).eqnLemmas.find? n with
+  | some pfix => modify λ s => { s with name2eqns := s.name2eqns.insertWith (· ++ ·) pfix [n] }
   | none => pure ()
 
 def tryAddSimpLemma (n : Name) (prio : Nat) : PortM Unit :=
@@ -113,9 +113,13 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     println! "[mixfix] {kind} {tok} {prec} {n}"
     processMixfix kind (f n) prec tok
 
+  | ActionItem.eqnLemma n ln =>
+    println! "[eqnLemma] {n} {ln}"
+    println! "[eqnLemma] not yet handled"
+
   | ActionItem.simp n prio => do
     tryAddSimpLemma (f n) prio
-    for eqn in (← get).name2equations.findD n [] do
+    for eqn in (← get).name2eqns.findD n [] do
       tryAddSimpLemma (f eqn) prio
 
   | ActionItem.reducibility n kind => do

@@ -66,9 +66,9 @@ section Equation
 
 open Lean
 
-def buildSimpleEquationLemma (type val : Expr) : MetaM (Expr × Expr) := do
+--def buildSimpleEquationLemma (type val : Expr) : MetaM (Expr × Expr) := do
   -- def forallTelescope (type : Expr) (k : Array Expr → Expr → n α) : n α :=
-  let etype ← Meta.forallTelescope type fun xs body =>
+--  let etype ← Meta.forallTelescope type fun xs body =>
 
 
 
