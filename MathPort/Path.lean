@@ -84,6 +84,7 @@ def Path34.toLean4olean (p : Path34) : String := p.toLean4path ".olean"
 def Path34.toLean4autolean (p : Path34) : String := p.toLean4path "_auto.lean"
 
 def resolveDotPath (dotPath : DotPath) : IO Path34 := do
+  println! "[resolveDotPath] {dotPath.path}"
   let mrp : ModRelPath := dotPath.toModRelPath
   for modInfo in MODULES do
     let p34 := Path34.mk modInfo mrp

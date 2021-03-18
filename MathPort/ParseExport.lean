@@ -205,6 +205,7 @@ def processLine (line : String) : ParseM Unit := do
           | [status] => do
             let status ← parseReducibilityStatus status
             if n == (← get).prevTopDecl ∧ status == ReducibilityStatus.irreducible then
+              println! "[opaque] {n}"
               modify fun s => { s with opaqueDecls := s.opaqueDecls.insert n }
             emit $ ActionItem.reducibility n status
           | _        => throw $ IO.userError s!"[reducibility] expected name"
@@ -267,15 +268,16 @@ def processLine (line : String) : ParseM Unit := do
 
       | _              => []
 
-def collectOpaque (opaqueDecls : HashSet Name) (actionItems : Array ActionItem) : Array ActionItem := do
+def collectOpaque : ParseM (Array ActionItem) := do
   let mut newItems   : Array ActionItem := #[]
   let mut decl2index : HashMap Name Nat := {}
 
-  for actionItem in actionItems do
+  for actionItem in (← get).actionItems do
     match actionItem with
     | ActionItem.decl d =>
       let name := d.names.head!
-      if opaqueDecls.contains name then
+      if (← get).opaqueDecls.contains name then
+        println! "[opaque] CREATE {name}"
         decl2index := decl2index.insert name newItems.size
         newItems := newItems.push $ ActionItem.opaqueDecl (OpaqueDeclaration.mk d #[])
       else
@@ -291,11 +293,6 @@ def collectOpaque (opaqueDecls : HashSet Name) (actionItems : Array ActionItem) 
 
   return newItems
 
-
-
-
-
-
 def parseExportFile (h : IO.FS.Handle) : IO (Array ActionItem) := ParseM.toIO $ do
   -- discard imports
   let _ ← h.getLine
@@ -304,8 +301,8 @@ def parseExportFile (h : IO.FS.Handle) : IO (Array ActionItem) := ParseM.toIO $ 
     let line := (← h.getLine).dropRightWhile λ c => c == '\n'
     if line == "" then continue
     processLine line
-
-  pure (← get).actionItems
+  -- second pass
+  collectOpaque
 
 end Parser
 
