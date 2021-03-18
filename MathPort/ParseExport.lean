@@ -112,6 +112,7 @@ def processLine (line : String) : PortM (List ActionItem) := do
       match tokens with
       | ("#AX" :: n :: t :: ups) =>
         let (n, t, ups) ← ((← str2name n), (← str2expr t), (← ups.mapM str2name))
+        modify fun s => { s with prevTopDecl := n }
         pure [ActionItem.decl $ Declaration.axiomDecl {
           name        := n,
           levelParams := ups,
@@ -121,6 +122,7 @@ def processLine (line : String) : PortM (List ActionItem) := do
 
       | ("#DEF" :: n :: thm :: h :: t :: v :: ups) =>
         let (n, h, t, v, ups) ← ((← str2name n), (← parseHints h), (← str2expr t), (← str2expr v), (← ups.mapM str2name))
+        if (isEquationLemma? n).isNone then modify fun s => { s with prevTopDecl := n }
         let thm := (← parseNat thm) > 0
         if thm then
           pure [ActionItem.decl $ Declaration.thmDecl {
@@ -141,6 +143,7 @@ def processLine (line : String) : PortM (List ActionItem) := do
 
       | ("#IND" :: nps :: n :: t :: nis :: rest) =>
         let (nps, n, t, nis) ← ((← parseNat nps), (← str2name n), (← str2expr t), (← parseNat nis))
+        modify fun s => { s with prevTopDecl := n }
         let (is, ups) := rest.splitAt (2 * nis)
         let lparams ← ups.mapM str2name
         let ctors ← parseIntros is
@@ -161,12 +164,16 @@ def processLine (line : String) : PortM (List ActionItem) := do
 
       -- TODO: look at the 'deleted' bit
       | ("#ATTR" :: a :: p :: n :: _ :: rest)    => do
-        let attrName ← str2name a
+        let (attrName, p, n) := (← str2name a, ← parseNat p, ← str2name n)
         if attrName == "simp" then
-          pure [ActionItem.simp (← str2name n) (← parseNat p)]
+          pure [ActionItem.simp n p]
         else if attrName == "reducibility" then
           match rest with
-          | [status] => pure [ActionItem.reducibility (← str2name n) (← parseReducibilityStatus status)]
+          | [status] => do
+            let status ← parseReducibilityStatus status
+            if n == (← get).prevTopDecl ∧ status == ReducibilityStatus.irreducible then
+              modify fun s => { s with opaqueDecls := s.opaqueDecls.insert n }
+            pure [ActionItem.reducibility n status]
           | _        => throwError s!"[reducibility] expected name"
         else
           pure []

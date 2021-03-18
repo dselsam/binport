@@ -75,7 +75,6 @@ def genOLeanFor (proofs : Bool) (target : Path34) : IO Unit := do
          if line == "" then continue
          actionItems := actionItems.append (← processLine line).toArray
 
-       let mut isIrreducible : Bool := false
        for actionItem in actionItems do
          processActionItem actionItem
 

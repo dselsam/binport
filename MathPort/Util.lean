@@ -62,6 +62,18 @@ def fromList (kvs : List (α × β)) : HashMap α β := do
 
 end Std.HashMap
 
+section Equation
+
+open Lean
+
+-- TODO: imprecise
+def isEquationLemma? (n : Name) : Option Name := do
+  -- example: list.nth.equations._eqn_1
+  let n₁ : Name := n.getPrefix
+  if n₁.isStr && n₁.getString! == "equations" then n₁.getPrefix else none
+
+end Equation
+
 def createDirectoriesIfNotExists (outFilename : String) : IO Unit := do
   let d := System.FilePath.dirName outFilename
   let s := { cmd := "mkdir", args := #["-p", d] }

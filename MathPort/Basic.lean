@@ -31,11 +31,15 @@ structure Rules where
   noInsts      : HashSet Name      := {}
 
 structure State extends ExportInfo, Rules where
+  -- for processing (not parsing)
   decl           : Name                     := `unknown
-  irreducibles   : HashSet Name             := {}
   nNotations     : Nat                      := 0
-  name2equations : HashMap Name (List Name) := {}
 
+  -- for parsing only (not processing), does not include equation lemmas
+  prevTopDecl    : Name                     := `unknown
+  -- must be declared irreducible before the next non-equation
+  opaqueDecls    : HashSet Name             := {}
+  name2equations : HashMap Name (List Name) := {}
 
 abbrev PortM := ReaderT Context $ StateRefT State CommandElabM
 

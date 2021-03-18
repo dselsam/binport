@@ -77,11 +77,9 @@ def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : P
   elabCommand stx
 
 def maybeRegisterEquation (n : Name) : PortM Unit := do
-  -- example: list.nth.equations._eqn_1
-  -- def insertWith (m : HashMap α β) (merge : β → β → β) (a : α) (b : β) : HashMap α β :=
-  let n₁ : Name := n.getPrefix
-  if n₁.isStr && n₁.getString! == "equations" then
-    modify λ s => { s with name2equations := s.name2equations.insertWith (· ++ ·) n₁.getPrefix [n] }
+  match isEquationLemma? n with
+  | some pfix => modify λ s => { s with name2equations := s.name2equations.insertWith (· ++ ·) pfix [n] }
+  | none => pure ()
 
 def tryAddSimpLemma (n : Name) (prio : Nat) : PortM Unit :=
   try
@@ -233,7 +231,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
           mkIBelow name
           mkBRecOn name
           mkBInductionOn name
-        catch _ => pure ()
+        catch ex => warn ex
 
       let oldRecName := mkOldRecName (f ind.name)
       let oldRec ← liftMetaM $ mkOldRecursor (f ind.name) oldRecName
