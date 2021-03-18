@@ -13,10 +13,10 @@ noncomputable instance hasCoeT [inst : Mathlib.has_coe_t α β] : CoeTC α β :=
   coe := @Mathlib.has_coe_t.coe _ _ inst
 }
 
-noncomputable instance hasCoeToFun [inst : Mathlib.has_coe_to_fun α] : CoeFun α (noindex! (@Mathlib.has_coe_to_fun.F _ inst)) := {
+noncomputable instance hasCoeToFun [inst : Mathlib.has_coe_to_fun α] : CoeFun α (no_index (@Mathlib.has_coe_to_fun.F _ inst)) := {
   coe := @Mathlib.has_coe_to_fun.coe _ inst
 }
 
-noncomputable instance hasCoeToSort [inst : Mathlib.has_coe_to_sort α] : CoeSort α (noindex! (@Mathlib.has_coe_to_sort.S _ inst)) := {
+noncomputable instance hasCoeToSort [inst : Mathlib.has_coe_to_sort α] : CoeSort α (no_index (@Mathlib.has_coe_to_sort.S _ inst)) := {
   coe := @Mathlib.has_coe_to_sort.coe _ inst
 }
