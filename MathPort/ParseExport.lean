@@ -310,9 +310,9 @@ def parseExportFile (h : IO.FS.Handle) : IO (Array ActionItem × HashMap Name Na
     if line == "" then continue
     processLine line
   -- second pass
-  let _ ← collectOpaque
-  pure ((← get).actionItems, (← get).eqnLemmas)
-  -- pure (← collectOpaque, (← get).eqnLemmas)
+  -- let _ ← collectOpaque
+  -- pure ((← get).actionItems, (← get).eqnLemmas)
+  pure (← collectOpaque, (← get).eqnLemmas)
 
 end Parser
 

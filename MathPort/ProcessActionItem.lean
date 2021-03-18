@@ -175,23 +175,50 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
     -- def foo.new : foo.orig.type := foo.impl.1
     -- def foo.new.equation : foo.orig.equation.abstract foo.new := foo.impl.2
-    if od.eqnLemmas.size ≠ 1 then throwError s!"opaqueDecl must have exactly 1 eqnLemma, {od.eqnLemmas.size}"
+    if od.eqnLemmas.size == 0 then throwError s!"opaqueDecl must have eqnLemmas"
     match (od.decl, od.eqnLemmas[0]) with
-    | (Declaration.defnDecl d, Declaration.thmDecl l) =>
-      let dname : Name := f d.name
+    | (Declaration.defnDecl d, Declaration.defnDecl l) =>
+      let targetName    : Name := f d.name
+      let targetLemName : Name := f l.name
+
+      let dname : Name := targetName ++ `_original
       let dtype : Expr ← translate d.type
       let dval  : Expr ← translate d.value
 
-      let lname : Name := f l.name
+      addDeclLoud dname $ Declaration.defnDecl { d with
+        name        := dname,
+        type        := dtype,
+        value       := dval
+      }
+
+      let lname : Name := targetLemName ++ `original
       let ltype : Expr ← translate l.type
       let lval  : Expr ← translate l.value
 
+      addDeclLoud dname $ Declaration.defnDecl { l with
+        name        := lname,
+        type        := ltype,
+        value       := lval
+      }
+
+      -- println! "[dname] {dname} \n\n : {dtype} \n\n := {dval}"
+      -- println! "[lname] {lname} \n\n : {ltype} \n\n := {lval}"
+
       let atype : Expr ← liftMetaM $ mkArrow dtype (mkSort levelZero)
-      let aval  : Expr := mkLambda `_f BinderInfo.default dtype $ ltype.replace fun e => if e.isAppOf dname then some (mkBVar 0) else none
+      let aval  : Expr ← liftMetaM $ do
+        withLocalDeclD `_f dtype fun x =>
+          mkLambdaFVars #[x] $ ltype.replace fun e => if e.isConstOf targetName then some x else none
+
+      -- println! "[abstr] {atype} \n\n := {aval}"
+
+      let lps : List Level := d.levelParams.map mkLevelParam
 
       let cname : Name := dname ++ `_opaque
       let ctype : Expr ← liftMetaM $ mkAppM `Subtype #[aval]
-      let cval  : Expr ← liftMetaM $ mkAppM `Subtype.mk #[dval, lval]
+      let cval  : Expr ← liftMetaM $ mkAppM `Subtype.mk #[mkConst dname lps, mkConst lname lps]
+
+      -- println! "[cval ] {cname} {cval}"
+      -- println! "[cname] {cname} \n\n: {ctype} \n\n := {cval}"
 
       let cdecl : Declaration := Declaration.opaqueDecl {
         name        := cname,
@@ -206,19 +233,19 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       let cexpr : Expr := mkConst cname $ d.levelParams.map mkLevelParam
 
       addDeclLoud dname $ Declaration.defnDecl { d with
-        name  := dname,
+        name  := targetName,
         type  := dtype,
-        value := (← liftMetaM $ mkAppM `Subtype.val #[cexpr]),
+        value := (← liftMetaM $ mkAppM `Subtype.val #[mkConst cname lps]),
         hints := ReducibilityHints.opaque
       }
 
-      addDeclLoud lname $ Declaration.thmDecl { l with
-        name  := lname,
+      addDeclLoud lname $ Declaration.defnDecl { l with
+        name  := targetLemName,
         type  := ltype,
-        value := (← liftMetaM $ mkAppM `Subtype.property #[cexpr])
+        value := (← liftMetaM $ mkAppM `Subtype.property #[mkConst cname lps])
       }
 
-    | _ => throwError s!"[opaqueDecl] unexpected"
+    | _ => throwError s!"[opaqueDecl] {od.eqnLemmas.size}"
 
   | ActionItem.decl d => do
     match d with
