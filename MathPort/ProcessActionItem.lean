@@ -194,6 +194,11 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       let lname : Name := targetLemName ++ `original
       let ltype : Expr ← translate l.type
       let lval  : Expr ← translate l.value
+      let lval := lval.replace fun
+        | e@(Expr.const n us _) =>
+          if n == targetName then some (mkConst dname us) else none
+        | _ => none
+
 
       addDeclLoud dname $ Declaration.defnDecl { l with
         name        := lname,
