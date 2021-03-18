@@ -123,3 +123,54 @@ def obviouslySyntax : Expr := do
   ]
 
 end AutoParam
+
+section DecodeName
+
+open Lean
+
+-- Awkward: this section refers to names that are created during the port
+-- Alternatively, could do this more principledly in PrePort
+
+def decodeChar (e : Expr) : MetaM Char := do
+  if e.isAppOfArity `Mathlib.char.mk 2 then
+    match (e.getArg! 0).natLit? with
+    | some n => Char.ofNat n
+    | _ => throwError "[decodeChar] failed on {e}"
+  else
+    throwError "[decodeChar] failed on {e}"
+
+partial def decodeStringCore (e : Expr) : MetaM String := do
+  if e.isAppOfArity `List.nil 1 then
+    ""
+  else if e.isAppOfArity `List.cons 3 then
+    let s ← decodeStringCore (e.getArg! 2)
+    let c ← decodeChar (e.getArg! 1)
+    pure ⟨c :: s.data⟩
+  else
+    throwError "[decodeStringCore] failed on {e}"
+
+def decodeUnsigned (e : Expr) : MetaM Nat :=
+  if e.isAppOfArity `Mathlib.fin.mk 2 then
+    match (e.getArg! 0).natLit? with
+    | some n => n
+    | _ => throwError "[decodeUInt32] failed on {e}"
+  else
+    throwError "[decodeUInt32] failed on {e}"
+
+def decodeString (e : Expr) : MetaM String := do
+  if e.isAppOfArity `Mathlib.string_imp.mk 1 then
+    decodeStringCore (e.getArg! 0)
+  else throwError "[decodeString] failed on {e}"
+
+partial def decodeName (e : Expr) : MetaM Name := do
+  if e.isAppOfArity `Mathlib.name.anonymous 0 then
+    Name.anonymous
+  else if e.isAppOfArity `Mathlib.name.mk_string 2 then
+    Name.mkStr (← decodeName (e.getArg! 1)) (← decodeString (e.getArg! 0))
+  else if e.isAppOfArity `Mathlib.name.mk_numeral 2 then
+    Name.mkNum (← decodeName (e.getArg! 1)) (← decodeUnsigned (e.getArg! 0))
+  else
+    throwError "[decodeName] failed on {e}"
+
+
+end DecodeName

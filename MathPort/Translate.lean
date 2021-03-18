@@ -61,14 +61,21 @@ def translate (e : Expr) : PortM Expr := do
     translateAutoParams s e : MetaM TransformStep :=
       -- def auto_param : Sort u → name → Sort u :=
       -- λ (α : Sort u) (tac_name : name), α
-      if e.isAppOfArity `Mathlib.auto_param 2 then
-        let level   := e.getAppFn.constLevels!.head!
-        let type    := e.getArg! 0
-        let tacName := e.getArg! 1
-        -- Note: we currently hardcode `obviously`
-        -- if Mathlib really uses other tactics here, we can parse the name from the auto-ported Lean3 string
-        let tacSyntax := Syntax.ident SourceInfo.none "obviously".toSubstring `Mathlib.obviously []
-        TransformStep.done $ mkAppN (mkConst `autoParam [level]) #[type, obviouslySyntax]
+      if e.isAppOfArity `Mathlib.auto_param 2 then do
+        let level    := e.getAppFn.constLevels!.head!
+        let type     := e.getArg! 0
+        let tacName3 ← Meta.reduce (e.getArg! 1)
+        try
+          let tacName ← decodeName tacName3
+          let substr : Expr := mkAppN (mkConst `String.toSubstring) #[toExpr $ tacName.toString]
+          -- Note: we currently hardcode `obviously`
+          -- if Mathlib really uses other tactics here, we can parse the name from the auto-ported Lean3 string
+          let tacSyntax := mkAppN (mkConst `Lean.Syntax.ident) #[mkConst `Lean.SourceInfo.none, substr, toExpr tacName, toExpr ([] : List (Prod Name (List String)))]
+          TransformStep.done $ mkAppN (mkConst `autoParam [level]) #[type, tacSyntax ]
+        -- they prove theorems about auto_param!
+        catch ex => do
+          println! "[decode] {(← ex.toMessageData.toString)}"
+          TransformStep.visit e
       else
         TransformStep.visit e
 
