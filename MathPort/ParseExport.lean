@@ -120,7 +120,6 @@ def emit (item : ActionItem) : ParseM Unit :=
 
 def processLine (line : String) : ParseM Unit := do
   let tokens := line.splitOn " "
-  println! "[tokens] {tokens}"
   match tokens with
   | [] => throw $ IO.userError "[processLine] line has no tokens"
   | (t::_) => if t.isNat then processTerm tokens else processMisc tokens

@@ -87,6 +87,18 @@ def tryAddSimpLemma (n : Name) (prio : Nat) : PortM Unit :=
     println! "[simp] {n} {prio}"
   catch ex => warn ex
 
+def extractNameTypeValue (decl : Declaration) : Option (Name × Expr × Expr) :=
+  match decl with
+  | Declaration.defnDecl d => some (d.name, d.type, d.value)
+  | Declaration.thmDecl  d => some (d.name, d.type, d.value)
+  | _ => none
+
+def updateNameTypeValue (decl : Declaration) (name : Name) (type value : Expr) : Declaration :=
+  match decl with
+  | Declaration.defnDecl d => Declaration.defnDecl { d with name := name, type := type, value := value }
+  | Declaration.thmDecl  d => Declaration.thmDecl  { d with name := name, type := type, value := value }
+  | _ => panic! "shouldn't be possible"
+
 def processActionItem (actionItem : ActionItem) : PortM Unit := do
   modify λ s => { s with decl := actionItem.toDecl }
   let s ← get
@@ -176,10 +188,10 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     -- def foo.new : foo.orig.type := foo.impl.1
     -- def foo.new.equation : foo.orig.equation.abstract foo.new := foo.impl.2
     if od.eqnLemmas.size == 0 then throwError s!"opaqueDecl must have eqnLemmas"
-    match (od.decl, od.eqnLemmas[0]) with
-    | (Declaration.defnDecl d, Declaration.defnDecl l) =>
+    match (od.decl, extractNameTypeValue od.eqnLemmas[0]) with
+    | (Declaration.defnDecl d, some (lname, ltype, lval)) =>
       let targetName    : Name := f d.name
-      let targetLemName : Name := f l.name
+      let targetLemName : Name := f lname
 
       let dname : Name := targetName ++ `_original
       let dtype : Expr ← translate d.type
@@ -192,22 +204,14 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       }
 
       let lname : Name := targetLemName ++ `original
-      let ltype : Expr ← translate l.type
-      let lval  : Expr ← translate l.value
-      let lval := lval.replace fun
-        | e@(Expr.const n us _) =>
-          if n == targetName then some (mkConst dname us) else none
-        | _ => none
+      let ltype : Expr := (← translate ltype).replaceConstNames fun n => if n == targetName then dname else n
+      let lval  : Expr := (← translate lval).replaceConstNames fun n => if n == targetName then dname else n
 
+      -- println! "[lname] {lname} \n\n : {ltype} \n\n := {lval}"
 
-      addDeclLoud dname $ Declaration.defnDecl { l with
-        name        := lname,
-        type        := ltype,
-        value       := lval
-      }
+      addDeclLoud lname $ updateNameTypeValue od.eqnLemmas[0] lname ltype lval
 
       -- println! "[dname] {dname} \n\n : {dtype} \n\n := {dval}"
-      -- println! "[lname] {lname} \n\n : {ltype} \n\n := {lval}"
 
       let atype : Expr ← liftMetaM $ mkArrow dtype (mkSort levelZero)
       let aval  : Expr ← liftMetaM $ do
@@ -218,9 +222,9 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
       let lps : List Level := d.levelParams.map mkLevelParam
 
-      let cname : Name := dname ++ `_opaque
+      let cname : Name := targetName ++ `_opaque
       let ctype : Expr ← liftMetaM $ mkAppM `Subtype #[aval]
-      let cval  : Expr ← liftMetaM $ mkAppM `Subtype.mk #[mkConst dname lps, mkConst lname lps]
+      let cval  : Expr ← liftMetaM $ mkAppOptM `Subtype.mk #[none, some aval, some (mkConst dname lps), some (mkConst lname lps)]
 
       -- println! "[cval ] {cname} {cval}"
       -- println! "[cname] {cname} \n\n: {ctype} \n\n := {cval}"
@@ -244,11 +248,12 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
         hints := ReducibilityHints.opaque
       }
 
-      addDeclLoud lname $ Declaration.defnDecl { l with
-        name  := targetLemName,
-        type  := ltype,
-        value := (← liftMetaM $ mkAppM `Subtype.property #[mkConst cname lps])
-      }
+      addDeclLoud lname $ updateNameTypeValue od.eqnLemmas[0]
+          targetLemName
+          ltype
+          (← liftMetaM $ mkAppM `Subtype.property #[mkConst cname lps])
+
+      println! "[opaque] Finished processing {targetName}!"
 
     | _ => throwError s!"[opaqueDecl] {od.eqnLemmas.size}"
 
