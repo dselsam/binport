@@ -144,6 +144,9 @@ def processOpaque (od : OpaqueDeclaration) : PortM Unit := do
       let ⟨lname, ltype, lval⟩ := extractNameTypeValue eqnLemma
       let lname : Name := f lname ++ `original
       let ltype : Expr := (← translate ltype).replaceConstNames fun n => if n == targetName then dname else n
+      -- TODO: this is broken, and this `lval` is the problem
+      -- it might refer to targetName, but we need to remove it and create our own `rfl` proof instead
+      -- then we shouldn't need to define any of the _original aux-decls at all
       let lval  : Expr := (← translate lval).replaceConstNames fun n => if n == targetName then dname else n
       addDeclLoud lname $ updateNameTypeValue od.eqnLemmas[0] ⟨lname, ltype, lval⟩
       pure ⟨lname, ltype, lval⟩
