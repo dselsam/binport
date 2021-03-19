@@ -13,29 +13,30 @@ abbrev SynthExperimentM := ReaderT Context (StateRefT State MetaM)
 
 def checkExpr (name : Name) (inType : Bool) (e : Expr) : SynthExperimentM Unit := transform e (pre := check) *> pure () where
   check (e : Expr) : SynthExperimentM TransformStep := do
-    let type ← inferType e
-    -- let type ← whnf type
-    if !type.isApp then return TransformStep.visit e
-    let f := type.getAppFn
-    -- let f ← whnf f
-    if !f.isConst then return TransformStep.visit e
-    let clsName := f.constName!
-    if !(isClass (← getEnv) clsName) then return TransformStep.visit e
-    println! "[synth] {clsName} {name}"
     try
-      let _ ← withCurrHeartbeats $ synthInstance type
-      (← get).handle.putStr s!"{clsName}, {name}, {inType}, 1\n"
+      let type ← inferType e
+      if !type.isApp then return TransformStep.visit e
+      let f := type.getAppFn
+      if !f.isConst then return TransformStep.visit e
+      let clsName := f.constName!
+      if !(isClass (← getEnv) clsName) then return TransformStep.visit e
+      println! "[synth] {clsName} {name}"
+      try
+        let _ ← withCurrHeartbeats $ synthInstance type
+        (← get).handle.putStr s!"{clsName} {name} {inType} 1\n"
+      catch ex =>
+        println! "[warn:synth] {clsName} {name} {inType} {← ex.toMessageData.toString}"
+        (← get).handle.putStr s!"{clsName} {name} {inType} 0\n"
+      return TransformStep.done e
     catch ex =>
-      println! "[warn] {← ex.toMessageData.toString}"
-      (← get).handle.putStr s!"{clsName}, {name}, {inType}, 0\n"
-    return TransformStep.done e
+      println! "[warn:check] {name} {← ex.toMessageData.toString}"
+      return TransformStep.visit e
 
 def checkConstant (cinfo : ConstantInfo) : SynthExperimentM Unit := do
   checkExpr cinfo.name true cinfo.type
   match cinfo.value? with
   | some v => checkExpr cinfo.name false v
   | _ => pure ()
-
 
 def runSynthExperiment : SynthExperimentM Unit := do
   (← getEnv).constants.map₁.foldM (init := ()) check
@@ -46,7 +47,7 @@ def runSynthExperiment : SynthExperimentM Unit := do
       if name.isInternal then return ()
       if not ((`Mathlib).isPrefixOf name) then return ()
       try checkConstant cinfo
-      catch ex => println! "[warn] {← ex.toMessageData.toString}"
+      catch ex => println! "[warn:uncaught] {name} {← ex.toMessageData.toString}"
 
 end SynthExperiment
 

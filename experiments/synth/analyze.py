@@ -1,9 +1,14 @@
 import csv
 import collections
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('filename', action='store', type=str)
+args = parser.parse_args()
 
 by_class = collections.defaultdict(list)
 
-with open('results.csv') as csvfile:
+with open(args.filename) as csvfile:
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for row in reader:
         clsName, defName, inType, success = row[0], row[1], row[2], row[3]
