@@ -178,7 +178,7 @@ def processOpaque (od : OpaqueDeclaration) : PortM Unit := do
 
     let cexpr : Expr := mkConst cname $ d.levelParams.map mkLevelParam
 
-    addDeclLoud dname $ Declaration.defnDecl { d with
+    addDeclLoud targetName $ Declaration.defnDecl { d with
       name  := targetName,
       type  := dtype,
       value := (← liftMetaM $ mkAppM `Subtype.val #[mkConst cname lps]),
@@ -186,15 +186,19 @@ def processOpaque (od : OpaqueDeclaration) : PortM Unit := do
     }
 
     -- TODO:
+    let pf ← liftMetaM $ mkAppM `Subtype.property #[mkConst targetName lps]
+    let lvals : Array Expr := extractNary `And.mk pf
+
     throwError "current spot: iterate over the lemmas"
-/-
-      addDeclLoud lname $ updateNameTypeValue od.eqnLemmas[0]
-          targetLemName
-          ltype
-          (← liftMetaM $ mkAppM `Subtype.property #[mkConst cname lps])
+    for i in [:targetLemNames.size] do
+      let targetLemName := targetLemNames[i]
+      let ⟨_, ltype, _⟩ := lemmaNTVs[i]
+      let lval := lvals[i]
+
+      addDeclLoud targetLemName $ updateNameTypeValue od.eqnLemmas[i] ⟨targetLemName, ltype, lval⟩
 
       println! "[opaque] Finished processing {targetName}!"
--/
+
     | _ => throwError s!"[opaqueDecl] {od.eqnLemmas.size}"
 
 
