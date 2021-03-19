@@ -1,6 +1,8 @@
 import Lean
+import Std.Data.HashSet
 
 open Lean Lean.Meta
+open Std (HashSet mkHashSet)
 
 namespace SynthExperiment
 
@@ -8,11 +10,13 @@ structure Context where
 
 structure State where
   handle : IO.FS.Handle
+  visited : HashSet Expr := {}
 
 abbrev SynthExperimentM := ReaderT Context (StateRefT State MetaM)
 
 def checkExpr (name : Name) (inType : Bool) (e : Expr) : SynthExperimentM Unit := transform e (pre := check) *> pure () where
   check (e : Expr) : SynthExperimentM TransformStep := do
+    if (← get).visited.contains e then return TransformStep.done e
     try
       if !e.isApp then return TransformStep.visit e
       if !e.getAppFn.isConst then return TransformStep.visit e
@@ -31,6 +35,7 @@ def checkExpr (name : Name) (inType : Bool) (e : Expr) : SynthExperimentM Unit :
       catch ex =>
         println! "[warn:synth] {clsName} {name} {inType} {← ex.toMessageData.toString}"
         (← get).handle.putStr s!"{clsName} {name} {inType} 0\n"
+      modify fun s => { s with visited := s.visited.insert e }
       return TransformStep.done e
     catch ex =>
       println! "[warn:check] {name} {← ex.toMessageData.toString}"
@@ -42,7 +47,7 @@ def checkConstant (cinfo : ConstantInfo) : SynthExperimentM Unit := do
   | some v => checkExpr cinfo.name false v
   | _ => pure ()
 
-def runSynthExperiment : SynthExperimentM Unit := do
+def runSynthExperiment : SynthExperimentM Unit := withReducible $ do
   (← getEnv).constants.map₁.foldM (init := ()) check
   (← getEnv).constants.map₂.foldlM (init := ()) check
   where
@@ -50,6 +55,7 @@ def runSynthExperiment : SynthExperimentM Unit := do
       if isPrivateName name then return ()
       if name.isInternal then return ()
       if not ((`Mathlib).isPrefixOf name) then return ()
+      println! "[check] {name}"
       try checkConstant cinfo
       catch ex => println! "[warn:uncaught] {name} {← ex.toMessageData.toString}"
 

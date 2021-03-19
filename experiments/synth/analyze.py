@@ -11,6 +11,7 @@ by_class = collections.defaultdict(list)
 with open(args.filename) as csvfile:
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for row in reader:
+        if len(row) < 4: continue
         clsName, defName, inType, success = row[0], row[1], row[2], row[3]
         by_class[clsName].append(1 if success == "1" else 0)
 
