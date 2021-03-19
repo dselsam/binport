@@ -34,8 +34,10 @@ variable {α : Type u} [HasZero α] [HasOne α] [Add α] [Inhabited α]
 def bit0 (x : α) : α := x + x
 def bit1 (x : α) : α := bit0 x + HasOne.one
 
-instance instZero2Nat : OfNat α (nat_lit 0) := ⟨HasZero.zero⟩
-instance instOne2Nat  : OfNat α (nat_lit 1) := ⟨HasOne.one⟩
+-- TODO: these should be nat-lits, but currently the auto-porter
+-- is sometimes creating terms with `OfNat.ofNat Nat ...` instead
+instance instZero2Nat : OfNat α (no_index 0) /- (nat_lit 0) -/ := ⟨HasZero.zero⟩
+instance instOne2Nat  : OfNat α (no_index 1) /- (nat_lit 1) -/ := ⟨HasOne.one⟩
 
 -- TODO: well-founded
 partial def nat2bits (n : Nat) : α :=
@@ -44,7 +46,7 @@ partial def nat2bits (n : Nat) : α :=
   else if n % 2 == 1 then bit1 (nat2bits (n / 2))
   else bit0 (nat2bits (n / 2))
 
-instance instBits2Nat (n : Nat) : OfNat α (n+1) := ⟨nat2bits (n+1)⟩
+instance instBits2Nat (n : Nat) : OfNat α (no_index (n+1)) /- (n+1) -/ := ⟨nat2bits (n+1)⟩
 
 #print instZero2Nat
 #print instOne2Nat

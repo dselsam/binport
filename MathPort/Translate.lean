@@ -55,6 +55,8 @@ def translate (e : Expr) : PortM Expr := do
         match isNumber? e with
         | none => TransformStep.visit e
         | some info@⟨n, level, type, hasZero?, hasOne?, hasAdd?⟩ =>
+          -- TODO: we will want to avoid wrapping "normal" Nat numbers
+          -- (current workaround is for the OfNat instances to `no_index` the numbers)
           let inst := mkAppN (mkConst `OfNat.mk [level]) #[type, mkNatLit n, e]
           TransformStep.done $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, inst]
 
