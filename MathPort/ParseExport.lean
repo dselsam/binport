@@ -275,6 +275,7 @@ def processLine (line : String) : ParseM Unit := do
 def collectIrreducibles : ParseM (HashSet Name) := do
   let mut irreducibles : HashSet Name     := {}
   let mut blackList    : HashSet Name     := {} -- one equation lemma comes too late
+  let mut nEqnLemmas   : HashMap Name Nat := {}
   let mut prevTopDecl  : Name             := Name.anonymous
 
   for actionItem in (← get).actionItems do
@@ -287,6 +288,8 @@ def collectIrreducibles : ParseM (HashSet Name) := do
           prevTopDecl := name
           println! "[opaque:blacklist] {pfix}"
           blackList := blackList.insert pfix
+        else
+          nEqnLemmas := nEqnLemmas.insertWith (· + ·) pfix 1
       | _ => prevTopDecl := name
 
     | ActionItem.reducibility n status =>
@@ -299,6 +302,10 @@ def collectIrreducibles : ParseM (HashSet Name) := do
 
   for bad in blackList.toList do
     irreducibles := irreducibles.erase bad
+
+  for (name, count) in nEqnLemmas.toList do
+    if count != 1 then
+      irreducibles := irreducibles.erase name
 
   irreducibles
 

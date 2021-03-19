@@ -120,57 +120,47 @@ def extractNary (op : Name) (e₀ : Expr) : Array Expr := do
   xs := xs.push e
   pure xs.reverse
 
+def mkReflProofForVal (val : Expr) : MetaM Expr := do
+  -- [val] λ ... => body
+  lambdaTelescope val fun xs body => do
+    let rfl ← mkEqRefl body
+    mkLambdaFVars xs rfl
+
+
 def processOpaque (od : OpaqueDeclaration) : PortM Unit := do
   let s ← get
   let f n := translateName s (← getEnv) n
 
   match od.decl with
   | Declaration.defnDecl d =>
-    let targetName : Name := f d.name
+    /-
+    -- [lean3]
+    def foo (n : Nat) : Nat := <body>
+    def foo.equations._eqn_1 : ∀ n, foo n = <body> := λ n => rfl <lhs>
 
-    let dname : Name := targetName ++ `_original
-    let dtype : Expr ← translate d.type
-    let dval  : Expr ← translate d.value
+    -- [lean4]
+    def foo.spec (ϕ : <foo.type>) : Prop := (∀ n, ϕ <case1-lhs> = <case1-rhs>) ∧ (∀ n, ϕ <case2-lhs> = <case2-rhs>)
+    constant foo.constant : Subtype foo.spec := Subtype.mk <body> <equation-body-with-rhs>
+    def foo                  := Subtype.val foo.spec
+    def foo.equations._eqn_1 := Subtype.property foo.spec
+    -/
 
-    addDeclLoud dname $ Declaration.defnDecl { d with
-      name        := dname,
-      type        := dtype,
-      value       := dval
-    }
+    let (defName, defType, defVal) ← (f d.name, ← translate d.type, ← translate d.value)
 
-    let targetLemNames : Array Name := od.eqnLemmas.map fun eqnLemma => f eqnLemma.names.head!
+    let ⟨lemName, lemType, lemVal⟩ := extractNameTypeValue od.eqnLemmas[0]
+    let (lemName, lemType, lemVal) := (f lemName, ← translate lemType, ← liftMetaM (mkReflProofForVal defVal))
 
-    let lemmaNTVs : Array NameTypeValue ← od.eqnLemmas.mapM fun eqnLemma => do
-      let ⟨lname, ltype, lval⟩ := extractNameTypeValue eqnLemma
-      let lname : Name := f lname ++ `original
-      let ltype : Expr := (← translate ltype).replaceConstNames fun n => if n == targetName then dname else n
-      -- TODO: this is broken, and this `lval` is the problem
-      -- it might refer to targetName, but we need to remove it and create our own `rfl` proof instead
-      -- then we shouldn't need to define any of the _original aux-decls at all
-      let lval  : Expr := (← translate lval).replaceConstNames fun n => if n == targetName then dname else n
-      addDeclLoud lname $ updateNameTypeValue od.eqnLemmas[0] ⟨lname, ltype, lval⟩
-      pure ⟨lname, ltype, lval⟩
-
-    let allLemmaType : Expr := mkNary `And $ lemmaNTVs.map fun ⟨_, ltype, _⟩ => ltype
-
-    let atype : Expr ← liftMetaM $ mkArrow dtype (mkSort levelZero)
-    let aval  : Expr ← liftMetaM $ do
-      withLocalDeclD `_f dtype fun x =>
-        mkLambdaFVars #[x] $ allLemmaType.replace fun e => if e.isConstOf targetName then some x else none
+    let spec : Expr ← liftMetaM $ do
+      withLocalDeclD `_f defType fun f =>
+        mkLambdaFVars #[f] $ lemType.replace fun e => if e.isConstOf defName then some f else none
 
     let lps : List Level := d.levelParams.map mkLevelParam
 
-    let cname : Name := targetName ++ `_opaque
-    let ctype : Expr ← liftMetaM $ mkAppM `Subtype #[aval]
+    let cname : Name := defName ++ `_constant
+    let ctype : Expr ← liftMetaM $ mkAppM `Subtype #[spec]
+    let cval  : Expr ← liftMetaM $ mkAppOptM `Subtype.mk #[none, some spec, some defVal, some lemVal]
 
-    let allLemmaValue : Expr := mkNary `And.mk $ lemmaNTVs.map fun ⟨lname, _, _⟩ => mkConst lname lps
-
-    let cval  : Expr ← liftMetaM $ mkAppOptM `Subtype.mk #[none, some aval, some (mkConst dname lps), some allLemmaValue]
-
-      -- println! "[cval ] {cname} {cval}"
-      -- println! "[cname] {cname} \n\n: {ctype} \n\n := {cval}"
-
-    let cdecl : Declaration := Declaration.opaqueDecl {
+    addDeclLoud cname $ Declaration.opaqueDecl {
       name        := cname,
       levelParams := d.levelParams,
       type        := ctype,
@@ -178,28 +168,19 @@ def processOpaque (od : OpaqueDeclaration) : PortM Unit := do
       isUnsafe    := false
     }
 
-    addDeclLoud cname cdecl
-
-    let cexpr : Expr := mkConst cname $ d.levelParams.map mkLevelParam
-
-    addDeclLoud targetName $ Declaration.defnDecl { d with
-      name  := targetName,
-      type  := dtype,
+    addDeclLoud defName $ Declaration.defnDecl { d with
+      name  := defName,
+      type  := defType,
       value := (← liftMetaM $ mkAppM `Subtype.val #[mkConst cname lps]),
       hints := ReducibilityHints.opaque
     }
 
-    let pf ← liftMetaM $ mkAppM `Subtype.property #[mkConst cname lps]
-    let lvals : Array Expr := extractNary `And.mk pf
-
-    for i in [:targetLemNames.size] do
-      let targetLemName := targetLemNames[i]
-      let ⟨_, ltype, _⟩ := lemmaNTVs[i]
-      let lval := lvals[i]
-
-      addDeclLoud targetLemName $ updateNameTypeValue od.eqnLemmas[i] ⟨targetLemName, ltype, lval⟩
-
-      println! "[opaque] Finished processing {targetName}!"
+    addDeclLoud lemName $ updateNameTypeValue od.eqnLemmas[0] {
+      name := lemName,
+      type := lemType,
+      value := (← liftMetaM $ mkAppM `Subtype.property #[mkConst cname lps])
+    }
+    println! "[opaque] Finished processing {defName}!"
 
     | _ => throwError s!"[opaqueDecl] {od.eqnLemmas.size}"
 
@@ -276,25 +257,8 @@ partial def processActionItem (actionItem : ActionItem) : PortM Unit := do
     pure ()
 
   | ActionItem.opaqueDecl od => do
-    -- See https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/mathport/near/225031878
-    -- Example:
-    -- def foo.orig.type : Type := Nat → Nat
-    -- def foo.orig.val  : foo.orig.type := fun (n : Nat) => n + 1
-
-    -- def foo.orig.equation.type : Prop := ∀ n, foo.orig.val n = n + 1
-    -- def foo.orig.equation.val : foo.orig.equation.type := λ n => rfl
-
-    -- -- achieved by abstracting `foo.orig.val` from `foo.orig.equation.type`
-    -- def foo.orig.equation.abstract (ϕ : foo.orig.type) : Prop := ∀ n, ϕ n = n + 1
-
-    -- constant foo.impl : Subtype foo.orig.equation.abstract :=
-    --   Subtype.mk foo.orig.val foo.orig.equation.val
-
-    -- def foo.new : foo.orig.type := foo.impl.1
-    -- def foo.new.equation : foo.orig.equation.abstract foo.new := foo.impl.2
-    if od.eqnLemmas.size == 0 then
-      println! "warning: opaqueDecl has no eqnLemmas"
-      processActionItem $ ActionItem.decl od.decl
+    if od.eqnLemmas.size ≠ 1 then
+      throwError "[processOpaque] must have exactly one lemma"
     else
       processOpaque od
 
