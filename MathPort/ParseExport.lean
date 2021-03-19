@@ -303,8 +303,8 @@ def collectIrreducibles : ParseM (HashSet Name) := do
   for bad in blackList.toList do
     irreducibles := irreducibles.erase bad
 
-  for (name, count) in nEqnLemmas.toList do
-    if count != 1 then
+  for name in irreducibles.toList do
+    if nEqnLemmas.find? name != some 1 then
       irreducibles := irreducibles.erase name
 
   irreducibles
