@@ -14,6 +14,10 @@ abbrev SynthExperimentM := ReaderT Context (StateRefT State MetaM)
 def checkExpr (name : Name) (inType : Bool) (e : Expr) : SynthExperimentM Unit := transform e (pre := check) *> pure () where
   check (e : Expr) : SynthExperimentM TransformStep := do
     try
+      if !e.isApp then return TransformStep.visit e
+      if !e.getAppFn.isConst then return TransformStep.visit e
+      if !(isGlobalInstance (← getEnv) e.getAppFn.constName!) then return TransformStep.visit e
+
       let type ← inferType e
       if !type.isApp then return TransformStep.visit e
       let f := type.getAppFn
