@@ -201,7 +201,7 @@ def processOpaque (od : OpaqueDeclaration) : PortM Unit := do
     | _ => throwError s!"[opaqueDecl] {od.eqnLemmas.size}"
 
 
-def processActionItem (actionItem : ActionItem) : PortM Unit := do
+partial def processActionItem (actionItem : ActionItem) : PortM Unit := do
   modify λ s => { s with decl := actionItem.toDecl }
   let s ← get
   let f n := translateName s (← getEnv) n
@@ -289,8 +289,11 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
     -- def foo.new : foo.orig.type := foo.impl.1
     -- def foo.new.equation : foo.orig.equation.abstract foo.new := foo.impl.2
-    if od.eqnLemmas.size == 0 then throwError s!"opaqueDecl must have eqnLemmas"
-    processOpaque od
+    if od.eqnLemmas.size == 0 then
+      println! "warning: opaqueDecl has no eqnLemmas"
+      processActionItem $ ActionItem.decl od.decl
+    else
+      processOpaque od
 
   | ActionItem.decl d => do
     match d with
