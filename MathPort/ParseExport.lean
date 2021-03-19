@@ -25,7 +25,6 @@ structure State where
 
   -- For batching irreducible definitions into constants
   -- prevTopDecl : Name                  := Name.anonymous
-  irreducibles : HashSet Name      := {}
   eqnLemmas    : HashMap Name Name := {} -- name2pfix
 
   -- Accumulated (ordered) action tems
@@ -155,6 +154,7 @@ def processLine (line : String) : ParseM Unit := do
 
       | ("#DEF" :: n :: thm :: h :: t :: v :: ups) =>
         let (n, h, t, v, ups) ← ((← str2name n), (← parseHints h), (← str2expr t), (← str2expr v), (← ups.mapM str2name))
+        println! "[parse-def] {n}"
         let thm := (← parseNat thm) > 0
 
         if thm then
@@ -203,8 +203,6 @@ def processLine (line : String) : ParseM Unit := do
           match rest with
           | [status] => do
             let status ← parseReducibilityStatus status
-            if status == ReducibilityStatus.irreducible then
-              modify fun s => { s with irreducibles := s.irreducibles.insert n }
             emit $ ActionItem.reducibility n status
           | _        => throw $ IO.userError s!"[reducibility] expected name"
         else
@@ -273,7 +271,40 @@ def processLine (line : String) : ParseM Unit := do
 
       | _              => []
 
+-- TODO: these two don't need to be in parser
+def collectIrreducibles : ParseM (HashSet Name) := do
+  let mut irreducibles : HashSet Name     := {}
+  let mut blackList    : HashSet Name     := {} -- one equation lemma comes too late
+  let mut prevTopDecl  : Name             := Name.anonymous
+
+  for actionItem in (← get).actionItems do
+    match actionItem with
+    | ActionItem.decl d =>
+      let name := d.names.head!
+      match (← get).eqnLemmas.find? name with
+      | some pfix =>
+        if pfix != prevTopDecl then
+          prevTopDecl := name
+          println! "[opaque:blacklist] {pfix}"
+          blackList := blackList.insert pfix
+      | _ => prevTopDecl := name
+
+    | ActionItem.reducibility n status =>
+      if n == prevTopDecl ∧ status == ReducibilityStatus.irreducible then
+        println! "[opaque] {n}"
+        irreducibles := irreducibles.insert n
+
+    -- TODO: without this the error message is a nightmare!
+    | _ => continue
+
+  for bad in blackList.toList do
+    irreducibles := irreducibles.erase bad
+
+  irreducibles
+
 def collectOpaque : ParseM (Array ActionItem) := do
+  let irreducibles : HashSet Name ← collectIrreducibles
+
   let mut newItems   : Array ActionItem := #[]
   let mut decl2index : HashMap Name Nat := {}
 
@@ -281,7 +312,7 @@ def collectOpaque : ParseM (Array ActionItem) := do
     match actionItem with
     | ActionItem.decl d =>
       let name := d.names.head!
-      if (← get).irreducibles.contains name then
+      if irreducibles.contains name then
         println! "[opaque] CREATE {name}"
         decl2index := decl2index.insert name newItems.size
         newItems := newItems.push $ ActionItem.opaqueDecl (OpaqueDeclaration.mk d #[])

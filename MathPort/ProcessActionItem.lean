@@ -117,6 +117,7 @@ def extractNary (op : Name) (e₀ : Expr) : Array Expr := do
   while (e.isAppOfArity op 2) do
     xs := xs.push (e.getArg! 2)
     e  := e.getArg! 1
+  xs := xs.push e
   pure xs.reverse
 
 def processOpaque (od : OpaqueDeclaration) : PortM Unit := do
@@ -185,11 +186,9 @@ def processOpaque (od : OpaqueDeclaration) : PortM Unit := do
       hints := ReducibilityHints.opaque
     }
 
-    -- TODO:
-    let pf ← liftMetaM $ mkAppM `Subtype.property #[mkConst targetName lps]
+    let pf ← liftMetaM $ mkAppM `Subtype.property #[mkConst cname lps]
     let lvals : Array Expr := extractNary `And.mk pf
 
-    throwError "current spot: iterate over the lemmas"
     for i in [:targetLemNames.size] do
       let targetLemName := targetLemNames[i]
       let ⟨_, ltype, _⟩ := lemmaNTVs[i]
