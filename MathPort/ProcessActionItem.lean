@@ -121,11 +121,10 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       tryAddSimpLemma (f eqn) prio
 
   | ActionItem.reducibility n kind => do
-    -- (note: this will fail if the attribute is in a new module)
-    if kind == ReducibilityStatus.reducible then
-      println! "reducible {n}"
-      try setAttr { name := `reducible } (f n)
-      catch ex => warn ex
+    -- (note: this will fail if it declares reducible in a new module)
+    println! "reducibility {n} {repr kind}"
+    try setAttr { name := reducibilityToName kind } (f n)
+    catch ex => warn ex
 
   | ActionItem.projection proj => do
     println! "[projection] {reprStr proj}"

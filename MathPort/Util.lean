@@ -172,5 +172,16 @@ partial def decodeName (e : Expr) : MetaM Name := do
   else
     throwError "[decodeName] failed on {e}"
 
-
 end DecodeName
+
+section Reducibility
+
+open Lean
+
+def reducibilityToName (status : ReducibilityStatus) : Name :=
+  match status with
+  | ReducibilityStatus.reducible => `reducible
+  | ReducibilityStatus.semireducible => `semireducible
+  | ReducibilityStatus.irreducible => `irreducible
+
+end Reducibility
