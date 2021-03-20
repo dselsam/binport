@@ -38,6 +38,7 @@ def checkExpr (name : Name) (inType : Bool) (e : Expr) : SynthExperimentM Unit :
       modify fun s => { s with visited := s.visited.insert e }
       return TransformStep.done e
     catch ex =>
+      modify fun s => { s with visited := s.visited.insert e }
       println! "[warn:check] {name} {← ex.toMessageData.toString}"
       return TransformStep.visit e
 
@@ -56,7 +57,7 @@ def runSynthExperiment : SynthExperimentM Unit := withReducible $ do
       if name.isInternal then return ()
       if not ((`Mathlib).isPrefixOf name) then return ()
       println! "[check] {name}"
-      try checkConstant cinfo
+      try withCurrHeartbeats $ checkConstant cinfo
       catch ex => println! "[warn:uncaught] {name} {← ex.toMessageData.toString}"
 
 end SynthExperiment
@@ -65,15 +66,19 @@ open SynthExperiment
 
 unsafe def main : IO Unit := do
   initSearchPath s!"../../lean4/build/release/stage1/lib/lean:../../Lib4"
+
+  let opts : Options := ({} : Options).insert `maxHeartbeats (DataValue.ofNat 1000)
+
   let imports : List Import := [
     { module := `Init : Import },
     { module := `PrePort : Import },
     { module := `Mathlib.all : Import },
     { module := `PostPort : Import }
   ]
+
   withImportModules imports (opts := {}) (trustLevel := 0) $ λ env => do
     IO.FS.withFile "results.csv" IO.FS.Mode.write fun handle => do
-      let _ ← MetaM.toIO ((runSynthExperiment.run {}).run' { handle := handle }) {} { env := env }
+      let _ ← MetaM.toIO ((runSynthExperiment.run {}).run' { handle := handle }) { options := opts } { env := env }
       pure ()
 
   println! "[ok]"
