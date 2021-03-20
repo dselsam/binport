@@ -8,12 +8,15 @@ args = parser.parse_args()
 
 by_class = collections.defaultdict(list)
 
+totals = collections.defaultdict(int)
+
 with open(args.filename) as csvfile:
     reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     for row in reader:
         if len(row) < 4: continue
         clsName, defName, inType, success = row[0], row[1], row[2], row[3]
         by_class[clsName].append(success)
+        totals[success] += 1
 
 by_class_avgs = {}
 for clsName, results in by_class.items():
@@ -35,3 +38,5 @@ for clsName in classes:
 
 print("----------")
 print("Total: (%d / %d) = %0.2f" % (round(n_success_total), n_total, n_success_total / n_total))
+for status, total in totals.items():
+    print("  %16s: %3d (%0.2f)" % (status, total, total / n_total))

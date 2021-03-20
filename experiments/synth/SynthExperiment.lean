@@ -10,17 +10,19 @@ def BLACK_LIST : HashSet Name :=
   ({} : HashSet Name).insert `Mathlib.equiv.equiv_congr_refl_left
 
 inductive SynthResult where
-  | success : SynthResult
-  | timeout : SynthResult
-  | failed  : SynthResult
-  | other   : SynthResult
+  | success      : SynthResult
+  | timeout      : SynthResult
+  | failed       : SynthResult
+  | instExpected : SynthResult
+  | other        : SynthResult
   deriving Inhabited
 
 instance : ToString SynthResult := ⟨fun
-  | SynthResult.success => "success"
-  | SynthResult.timeout => "timeout"
-  | SynthResult.failed  => "failed"
-  | SynthResult.other   => "other"
+  | SynthResult.success      => "success"
+  | SynthResult.timeout      => "timeout"
+  | SynthResult.failed       => "failed"
+  | SynthResult.instExpected => "instExpected"
+  | SynthResult.other        => "other"
 ⟩
 
 structure DataPoint where
@@ -67,7 +69,8 @@ def checkExpr (name : Name) (inType : Bool) (e : Expr) : SynthExperimentM Unit :
         let result ←
           if msg.take 6 == "failed" then SynthResult.failed
           else if msg.take 5 == "(dete" then SynthResult.timeout
-          else println! "[warn:other] {clsName} {name} {inType} {msg}" ; SynthResult.other
+          else if msg.take 28 == "type class instance expected" then SynthResult.instExpected
+          else println! "[warn:other] {clsName} {name} {inType} '{msg}'" ; SynthResult.other
         emit { goal := e, clsName := clsName, declName := name, inType := inType, result := result }
       return TransformStep.done e
     catch ex =>
@@ -123,7 +126,9 @@ open SynthExperiment
 unsafe def withEnvOpts {α : Type} (f : Environment → Options → IO α) : IO α := do
   initSearchPath s!"../../lean4/build/release/stage1/lib/lean:../../Lib4"
 
-  let opts : Options := ({} : Options).insert `maxHeartbeats (DataValue.ofNat 5000)
+  let opts : Options := {}
+  let opts : Options := opts.insert `maxHeartbeats (DataValue.ofNat 5000)
+  let opts : Options := opts.insert `synthInstance.maxHeartbeats (DataValue.ofNat 5000)
 
   let imports : List Import := [
     { module := `Init : Import },
