@@ -62,7 +62,7 @@ def checkExpr (name : Name) (inType : Bool) (e : Expr) : SynthExperimentM Unit :
 
       -- println! "[synth] {clsName} {name}"
       try
-        let _ ← synthInstance type
+        let _ ← withCurrHeartbeats $ synthInstance type
         emit { goal := e, clsName := clsName, declName := name, inType := inType, result := SynthResult.success }
       catch ex =>
         let msg ← ex.toMessageData.toString
@@ -127,8 +127,8 @@ unsafe def withEnvOpts {α : Type} (f : Environment → Options → IO α) : IO 
   initSearchPath s!"../../lean4/build/release/stage1/lib/lean:../../Lib4"
 
   let opts : Options := {}
-  let opts : Options := opts.insert `maxHeartbeats (DataValue.ofNat 5000)
-  let opts : Options := opts.insert `synthInstance.maxHeartbeats (DataValue.ofNat 5000)
+  let opts : Options := opts.insert `maxHeartbeats (DataValue.ofNat 1000)
+  let opts : Options := opts.insert `synthInstance.maxHeartbeats (DataValue.ofNat 50000)
 
   let imports : List Import := [
     { module := `Init : Import },
