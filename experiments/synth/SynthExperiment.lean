@@ -7,7 +7,7 @@ open Std (HashSet mkHashSet)
 namespace SynthExperiment
 
 def BLACK_LIST : HashSet Name :=
-  ({} : HashSet Name).insert `Mathlib.equiv.equiv_congr_refl_left
+  ({} : HashSet Name)
 
 inductive SynthResult where
   | success      : SynthResult
