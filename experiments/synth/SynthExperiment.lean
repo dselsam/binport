@@ -64,11 +64,10 @@ def checkExpr (name : Name) (inType : Bool) (e : Expr) : SynthExperimentM Unit :
         emit { goal := e, clsName := clsName, declName := name, inType := inType, result := SynthResult.success }
       catch ex =>
         let msg ← ex.toMessageData.toString
-        -- println! "[warn:synth] {clsName} {name} {inType} {msg}"
-        let result :=
+        let result ←
           if msg.take 6 == "failed" then SynthResult.failed
           else if msg.take 5 == "(dete" then SynthResult.timeout
-          else SynthResult.other
+          else println! "[warn:other] {clsName} {name} {inType} {msg}" ; SynthResult.other
         emit { goal := e, clsName := clsName, declName := name, inType := inType, result := result }
       return TransformStep.done e
     catch ex =>
