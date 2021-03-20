@@ -13,11 +13,11 @@ with open(args.filename) as csvfile:
     for row in reader:
         if len(row) < 4: continue
         clsName, defName, inType, success = row[0], row[1], row[2], row[3]
-        by_class[clsName].append(1 if success == "1" else 0)
+        by_class[clsName].append(success)
 
 by_class_avgs = {}
 for clsName, results in by_class.items():
-    by_class_avgs[clsName] = sum(results) / len(results)
+    by_class_avgs[clsName] = sum([1 if result == "success" else 0 for result in results]) / len(results)
 
 classes = list(by_class.keys())
 classes.sort(key=(lambda c: -by_class_avgs[c]))
