@@ -14,6 +14,9 @@ namespace SynthExperiment
 def BLACK_LIST : HashSet Name :=
   ({} : HashSet Name)
 
+def WHITE_LIST : HashSet Name :=
+  ({} : HashSet Name).insert `Mathlib.category_theory.eq_curry_iff
+
 inductive SynthResult where
   | success      : SynthResult
   | timeout      : SynthResult
@@ -71,6 +74,7 @@ def checkExpr (name : Name) (inType : Bool) (e : Expr) : SynthExperimentM Unit :
         emit { goal := e, clsName := clsName, declName := name, inType := inType, result := SynthResult.success }
       catch ex =>
         let msg ← ex.toMessageData.toString
+        println! "[warn:ex] {msg}"
         let result ←
           if msg.take 6 == "failed" then SynthResult.failed
           else if msg.take 5 == "(dete" then SynthResult.timeout
@@ -114,6 +118,7 @@ def runSynthExperiment (env : Environment) (opts : Options) : IO Unit := do
 
   where
     collectJobs (jobs : Array (Name × Job)) (name : Name) (cinfo : ConstantInfo) : IO (Array (Name × Job)) := do
+      if !WHITE_LIST.isEmpty && !WHITE_LIST.contains name then return jobs
       if BLACK_LIST.contains name then return jobs
       if isPrivateName name then return jobs
       if name.isInternal then return jobs

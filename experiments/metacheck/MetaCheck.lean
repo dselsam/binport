@@ -14,6 +14,9 @@ namespace MetaCheckExperiment
 def BLACK_LIST : HashSet Name :=
   ({} : HashSet Name)
 
+def WHITE_LIST : HashSet Name :=
+  ({} : HashSet Name)
+
 inductive MetaCheckResult where
   | success      : MetaCheckResult
   | failed       : MetaCheckResult
@@ -48,6 +51,7 @@ def emit (datapoint : DataPoint) : MetaCheckExperimentM Unit :=
 
 def checkTypeValue (declName : Name) (type value : Expr) : MetaCheckExperimentM Unit := withTransparency TransparencyMode.all $ do
   try
+    let typeType ← inferType type -- (sanity test)
     let valueType ← inferType value
     let b ← isDefEq type valueType
     match b with
@@ -85,6 +89,7 @@ def runMetaCheckExperiment (env : Environment) (opts : Options) : IO Unit := do
 
   where
     collectJobs (jobs : Array (Name × Job)) (name : Name) (cinfo : ConstantInfo) : IO (Array (Name × Job)) := do
+      if !WHITE_LIST.isEmpty && !WHITE_LIST.contains name then return jobs
       if BLACK_LIST.contains name then return jobs
       if isPrivateName name then return jobs
       if name.isInternal then return jobs
