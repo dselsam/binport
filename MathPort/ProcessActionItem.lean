@@ -89,6 +89,17 @@ def tryAddSimpLemma (n : Name) (prio : Nat) : PortM Unit :=
     println! "[simp] {n} {prio}"
   catch ex => warn ex
 
+def isBadSUnfold (n : Name) : PortM Bool := do
+  if !n.isStr then return false
+  if n.getString! != "_sunfold" then return false
+  match (← getEnv).find? (n.getPrefix ++ `_main) with
+  | some cinfo =>
+    match cinfo.value? with
+    -- bad means the original function isn't actually recursive
+    | some v => Option.isNone $ v.find? fun e => e.isConst && e.constName!.isStr && e.constName!.getString! == "brec_on"
+    | _ => throwError "should have value"
+  | _ => throwError "should be defined"
+
 def processActionItem (actionItem : ActionItem) : PortM Unit := do
   modify λ s => { s with decl := actionItem.toDecl }
   let s ← get
@@ -198,6 +209,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       let type ← translate defn.type
 
       if s.ignored.contains defn.name then return ()
+      if ← isBadSUnfold name then return ()
 
       let value ← translate defn.value
       let env ← getEnv
