@@ -143,7 +143,9 @@ align list.cons List.cons
 align nat Nat
 align nat.zero Nat.zero
 align nat.succ Nat.succ
+
 align nat.pred Nat.pred
+align nat.pred._main Nat.pred
 
 align nat.add Nat.add
 align nat.add._main Nat.add
