@@ -98,7 +98,7 @@ def isBadSUnfold (n : Name) : PortM Bool := do
     -- bad means the original function isn't actually recursive
     | some v => Option.isNone $ v.find? fun e => e.isConst && e.constName!.isStr && e.constName!.getString! == "brec_on"
     | _ => throwError "should have value"
-  | _ => throwError "should be defined"
+  | _ => return false /- this can happen when e.g. `nat.add._main -> Nat.add` (which may be needed due to eqn lemmas) -/
 
 def processActionItem (actionItem : ActionItem) : PortM Unit := do
   modify λ s => { s with decl := actionItem.toDecl }

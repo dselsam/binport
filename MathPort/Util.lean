@@ -63,10 +63,12 @@ def fromList (kvs : List (α × β)) : HashMap α β := do
 end Std.HashMap
 
 def createDirectoriesIfNotExists (outFilename : String) : IO Unit := do
-  let d := System.FilePath.dirName outFilename
-  let s := { cmd := "mkdir", args := #["-p", d] }
-  let status ← IO.Process.run s
-  pure ()
+  match System.FilePath.parent outFilename with
+  | none => throw $ IO.userError "shouldn't happen"
+  | some d =>
+    let s := { cmd := "mkdir", args := #["-p", d] }
+    let status ← IO.Process.run s
+    pure ()
 
 section Loop
 

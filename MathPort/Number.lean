@@ -17,7 +17,7 @@ namespace MathPort
 
 open Lean
 
-partial def isConcreteNat? (e : Expr) : Option Nat :=
+partial def isConcreteNat? (e : Expr) : Option Nat := OptionM.run $
   if e.isConstOf `Nat.zero then
     some 0
   else if e.isAppOfArity `Nat.succ 1 then do
@@ -49,12 +49,12 @@ partial def isNumber? (e : Expr) : Option NumInfo := do
   }
   -- TODO: may need to check if these instances are def-eq
   -- (I am hoping that mathlib does not produce terms in which they are not)
-  else if e.isAppOfArity `bit0 3 then
+  else if e.isAppOfArity `bit0 3 then OptionM.run $ do
     let info ← isNumber? $ e.getArg! 2
     some { info with
              number  := info.number * 2,
              hasAdd? := info.hasAdd? <|> e.getArg! 1 }
-  else if e.isAppOfArity `bit1 4 then
+  else if e.isAppOfArity `bit1 4 then OptionM.run $ do
     let info ← isNumber? $ e.getArg! 2
     some { info with
              number  := info.number * 2 + 1,

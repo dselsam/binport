@@ -9,6 +9,9 @@ import Std.Data.HashSet
 open Lean Lean.Meta Lean.Elab.Term
 open Std (HashSet mkHashSet)
 
+def Lean.MessageLog.getErrorMessages (log : MessageLog) : MessageLog :=
+  { msgs := log.msgs.filter fun m => match m.severity with | MessageSeverity.error => true | _ => false }
+
 namespace DelaborateExperiment
 
 def BLACK_LIST : HashSet Name :=
@@ -56,7 +59,11 @@ def elabCtx : Lean.Elab.Term.Context := {
   fileMap  := FileMap.ofString "code panics if there is nothing here"
 }
 
-def checkExpr (declName : Name) (inType : Bool) (e : Expr) : DelaborateExperimentM Unit := do
+inductive ElabResult where
+  | term   : Expr → ElabResult
+  | errors : List Message → ElabResult
+
+def checkExpr (declName : Name) (levelNames : List Name) (inType : Bool) (e : Expr) : DelaborateExperimentM Unit := do
   -- Notes:
   --   - declName.getPrefix is also the currentNamespace passed to CoreM
   --   - the pretty printing options are declared in `withEnvOpts` below
@@ -65,22 +72,23 @@ def checkExpr (declName : Name) (inType : Bool) (e : Expr) : DelaborateExperimen
   try {
     let type ← inferType e
     let stx ← Lean.PrettyPrinter.delab declName.getPrefix [] e
-    try {
-      let e' ← TermElabM.run' (ctx := elabCtx) $ elabTerm stx (some type)
-      if Option.isSome $ e'.find? (fun e => e.isConstOf `sorryAx) then do
-        emit  { declName := declName, inType := inType, result := DelaborateResult.sorryAx }
-        return ()
+    let elabResult ← TermElabM.run' (ctx := elabCtx) (s := { levelNames := levelNames}) $ do
+      let e' ← elabTermAndSynthesize stx (some type)
+      if (← get).messages.hasErrors then ElabResult.errors $ (← get).messages.getErrorMessages.toList
+      else ElabResult.term e'
+    match elabResult with
+    | ElabResult.errors errs =>
+      let f' ← PrettyPrinter.ppTerm stx
+      let s := f'.pretty'
+      println! "[warn:elab:{declName}]\nSyntax:\n{s}\n"
+      for err in errs do println! "[warn:elab:{declName}] {← err.data.toString}"
+      emit { declName := declName, inType := inType, result := DelaborateResult.failedToElaborate }
+    | ElabResult.term e' => do
       match ← isDefEq e e' with
       | true  => emit { declName := declName, inType := inType, result := DelaborateResult.success }
       | false => emit { declName := declName, inType := inType, result := DelaborateResult.nonDefEq }
-    } catch ex => {
-      let msg ← ex.toMessageData.toString;
-      println! "[warn:no-elab] {msg}";
-      emit { declName := declName, inType := inType, result := DelaborateResult.failedToElaborate }
-    }
   } catch ex => {
-    let msg ← ex.toMessageData.toString;
-    println! "[warn:other] {msg}";
+    println! "[warn:other:{declName}] {← ex.toMessageData.toString}";
     emit { declName := declName, inType := inType, result := DelaborateResult.other }
   }
 
@@ -92,7 +100,7 @@ def checkConstant (env : Environment) (opts : Options) (cinfo : ConstantInfo) : 
 
   where
     core : DelaborateExperimentM (Array DataPoint) := do
-      checkExpr cinfo.name true cinfo.type
+      checkExpr cinfo.name cinfo.levelParams true cinfo.type
       match cinfo.value? with
       | some value => pure () -- TODO: checkExpr cinfo.name false value
       | _ => pure ()
@@ -134,6 +142,7 @@ unsafe def withEnvOpts {α : Type} (f : Environment → Options → IO α) : IO 
 
   let opts : Options := {}
   let opts : Options := opts.insert `pp.all (DataValue.ofBool true)
+  let opts : Options := opts.insert `pp.binder_types (DataValue.ofBool true)
   -- let opts : Options := opts.insert `synthInstance.maxHeartbeats (DataValue.ofNat 50000)
 
   let imports : List Import := [
