@@ -57,13 +57,13 @@ def elabCtx : Lean.Elab.Term.Context := {
 }
 
 def checkExpr (declName : Name) (inType : Bool) (e : Expr) : DelaborateExperimentM Unit := do
+  -- Notes:
+  --   - declName.getPrefix is also the currentNamespace passed to CoreM
+  --   - the pretty printing options are declared in `withEnvOpts` below
+  --     - (by default, pp.all is set to true)
   -- TODO: huh? why the errors without the braces?
   try {
     let type ← inferType e
-    -- Notes:
-    --   - declName.getPrefix is also the currentNamespace passed to CoreM
-    --   - the pretty printing options are declared in `withEnvOpts` below
-    --     - (by default, pp.all is set to true)
     let stx ← Lean.PrettyPrinter.delab declName.getPrefix [] e
     try {
       let e' ← TermElabM.run' (ctx := elabCtx) $ elabTerm stx (some type)
