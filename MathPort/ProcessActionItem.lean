@@ -156,6 +156,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     match (← get).noInsts.find? ni with
     | some _ => println! "[skipInstance] {ni}"
     | none   => try liftMetaM $ addInstance (f ni) AttributeKind.global prio
+                    setAttr { name := `inferTCGoalsRL } (f ni)
                 catch ex => warn ex
 
   | ActionItem.private _ _ => pure ()
