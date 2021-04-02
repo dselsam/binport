@@ -46,6 +46,7 @@ preport:
 
 postport:
 	LEAN_PATH=$(LEAN4_PATH) time ./lean4/build/release/stage1/bin/lean --o=$(LIB4)/PostPort/Coe.olean $(LIB4)/PostPort/Coe.lean
+	LEAN_PATH=$(LEAN4_PATH) time ./lean4/build/release/stage1/bin/lean --o=$(LIB4)/PostPort/Pow.olean $(LIB4)/PostPort/Pow.lean
 	LEAN_PATH=$(LEAN4_PATH) time ./lean4/build/release/stage1/bin/lean --o=$(LIB4)/PostPort.olean $(LIB4)/PostPort.lean
 
 portLean3: preport
