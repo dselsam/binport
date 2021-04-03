@@ -171,8 +171,6 @@ align has_sizeof.mk SizeOf.mk
 
 noinst bool.decidable_eq
 noinst nat.decidable_eq
-noinst nat.decidable_lt
-noinst nat.decidable_le
 noinst and.decidable
 noinst or.decidable
 noinst iff.decidable
@@ -183,6 +181,11 @@ noinst decidable.false
 noinst exists_prop_decidable
 noinst forall_prop_decidable
 noinst int.decidable_eq
+
+# TODO: currently, Mathlib's `<` on `Nat` differs from Lean4's
+# (and Mathlib's `<` is not being recognized as `decidable`)
+# noinst nat.decidable_lt
+# noinst nat.decidable_le
 
 neversorry of_as_true
 
