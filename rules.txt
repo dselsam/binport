@@ -140,6 +140,10 @@ align list List
 align list.nil List.nil
 align list.cons List.cons
 
+align option Option
+align option.none Option.none
+align option.some Option.some
+
 align nat Nat
 align nat.zero Nat.zero
 align nat.succ Nat.succ
