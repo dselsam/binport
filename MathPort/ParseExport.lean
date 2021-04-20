@@ -157,7 +157,7 @@ def processLine (line : String) : PortM (List ActionItem) := do
       | ["#PRIVATE", pretty, real]               => pure [ActionItem.private (← str2name pretty) (← str2name real)]
       | ["#PROTECTED", n]                        => pure [ActionItem.protected (← str2name n)]
 
-      | ("#POS_INFO" :: _)                       => pure []
+      | ["#POS_INFO", n, line, col]              => pure [ActionItem.position (← str2name n) (← parseNat line) (← parseNat col)]
 
       -- TODO: look at the 'deleted' bit
       | ("#ATTR" :: a :: p :: n :: _ :: rest)    => do
