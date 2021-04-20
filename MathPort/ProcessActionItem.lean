@@ -220,7 +220,6 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
     | Declaration.defnDecl defn => do
       let name := f defn.name
-      println! "[DEF] {name}"
       let type ← translate defn.type
 
       if s.ignored.contains defn.name then return ()
