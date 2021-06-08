@@ -58,7 +58,7 @@ constant withImportModulesConst {α : Type} (imports : List Import) (opts : Opti
 
 def genOLeanFor (proofs : Bool) (target : Path34) : IO Unit := do
   println! s!"[genOLeanFor] START {target.mrpath.path}"
-  createDirectoriesIfNotExists target.toLean4olean
+  createDirectoriesIfNotExists target.toLean4olean.toString
 
   let imports : List Import := [{ module := `Init : Import }, { module := `PrePort : Import }]
     ++ (← parseTLeanImports target).map fun path => { module := parseName path.toLean4dot }
@@ -85,16 +85,17 @@ def genOLeanFor (proofs : Bool) (target : Path34) : IO Unit := do
     pure ()
 
 partial def visit (target : Path34) : RunM Job := do
-  match (← get).path2task.find? target.toTLean with
+  match (← get).path2task.find? target.toTLean.toString with
   | some task => pure task
   | none      => do
-    if (← IO.fileExists target.toLean4olean) then
+    if (← target.toLean4olean.pathExists) then
       IO.asTask (pure ())
     else
       let paths ← parseTLeanImports target
       let cjobs ← paths.mapM visit
-      let job : Job ← bindTasks cjobs λ _ => IO.asTask $ genOLeanFor (← read).proofs target
-      modify λ s => { s with path2task := s.path2task.insert target.toTLean job }
+      let ctx ← read
+      let job : Job ← bindTasks cjobs λ _ => IO.asTask $ genOLeanFor ctx.proofs target
+      modify λ s => { s with path2task := s.path2task.insert target.toTLean.toString job }
       pure job
 
 

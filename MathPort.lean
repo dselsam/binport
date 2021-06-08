@@ -22,5 +22,7 @@ unsafe def main (args : List String) : IO Unit := do
     match lib with
     | "lean3"   => MathPort.run proofs $ Path34.mk MODULES[1] ⟨"all"⟩
     | "mathlib" => MathPort.run proofs $ Path34.mk MODULES[0] ⟨"all"⟩
+    | "nullstellensatz" => MathPort.run proofs $ Path34.mk MODULES[0] ⟨"ring_theory/nullstellensatz"⟩
+    | "prime" => MathPort.run proofs $ Path34.mk MODULES[0] ⟨"data/nat/prime"⟩
     | _         => throw $ IO.userError "Second argument <lib> must be 'lean3' or 'mathlib'"
   | _ => throw $ IO.userError "Expected <proof> <lib>"

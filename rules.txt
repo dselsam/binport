@@ -78,13 +78,13 @@ align has_mod Mod
 align has_mod.mk Mod.mk
 align has_mod.mod Mod.mod
 
-align has_le HasLessEq
-align has_le.mk HasLessEq.mk
-align has_le.le HasLessEq.LessEq
+align has_le LE
+align has_le.mk LE.mk
+align has_le.le LE.le
 
-align has_lt HasLess
-align has_lt.mk HasLess.mk
-align has_lt.lt HasLess.Less
+align has_lt LT
+align has_lt.mk LT.mk
+align has_lt.lt LT.lt
 
 align has_append Append
 align has_append.mk Append.mk
@@ -248,3 +248,12 @@ align has_zero.mk Mathlib.HasZero.mk
 align has_one Mathlib.HasOne
 align has_one.one Mathlib.HasOne.one
 align has_one.mk Mathlib.HasOne.mk
+
+#
+# Temporary sorries
+#
+
+sorry ring_aut.to_add_aut._proof_2
+sorry pi.complete_boolean_algebra
+sorry pi.complete_distrib_lattice
+sorry complete_boolean_algebra.to_complete_distrib_lattice

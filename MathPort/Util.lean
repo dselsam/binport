@@ -66,7 +66,7 @@ def createDirectoriesIfNotExists (outFilename : String) : IO Unit := do
   match System.FilePath.parent outFilename with
   | none => throw $ IO.userError "shouldn't happen"
   | some d =>
-    let s := { cmd := "mkdir", args := #["-p", d] }
+    let s := { cmd := "mkdir", args := #["-p", d.toString] }
     let status ← IO.Process.run s
     pure ()
 
@@ -187,3 +187,16 @@ def reducibilityToName (status : ReducibilityStatus) : Name :=
   | ReducibilityStatus.irreducible => `irreducible
 
 end Reducibility
+
+def IO.printlnf [ToString α] (s : α) : IO Unit := do
+  print ((toString s).push '\n')
+  (← getStdout).flush
+
+syntax "printlnf! " (interpolatedStr(term) <|> term) : term
+
+macro_rules
+  | `(printlnf! $msg) =>
+    if msg.getKind == Lean.interpolatedStrKind then
+      `((IO.printlnf (s! $msg) : IO Unit))
+    else
+      `((IO.printlnf $msg : IO Unit))

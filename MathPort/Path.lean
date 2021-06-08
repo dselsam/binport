@@ -5,18 +5,19 @@ Authors: Daniel Selsam
 
 Lean3 structure:
 
-- ./lean3/library/init/data/nat/basic.tlean
-- ./mathlib/src/data/nat/basic.tlean
+- <lean3>/library/init/data/nat/basic.tlean
+- <mathlib3>/src/data/nat/basic.tlean
 
 Lean4 structure:
 
-- lib4/auto/Lean3Lib/data/nat/basic.olean
-- lib4/auto/Mathlib/data/nat/basic.olean
+- Lib4/Lean3Lib/data/nat/basic.olean
+- Lib4/Mathlib/data/nat/basic.olean
 
 -/
 import Lean
 
 open Lean
+open System (FilePath)
 
 namespace MathPort
 
@@ -27,22 +28,19 @@ structure DotPath where
 
 -- Example: data/nat/basic
 structure ModRelPath where
-  path   : String
+  path   : FilePath
   deriving Inhabited, Repr
 
 def DotPath.toModRelPath (p : DotPath) : ModRelPath :=
   ⟨System.mkFilePath $ p.path.splitOn "."⟩
 
 def ModRelPath.toDotPath (p : ModRelPath) : DotPath :=
-  ⟨".".intercalate $ p.path.splitOn "/"⟩
-
-def ModRelPath.toUnderscorePath (p : ModRelPath) : String :=
-  ".".intercalate $ p.path.splitOn "_"
+  ⟨".".intercalate $ p.path.components⟩
 
 -- Example: Mathlib mathlib/src
 structure ModuleInfo where
-  l4name : String
-  l3path : String
+  l4name : FilePath
+  l3path : FilePath
   deriving Inhabited, Repr
 
 structure Path34 where
@@ -55,41 +53,40 @@ structure Path34 where
 -- TODO: config file?
 -------------------------------
 def MODULES : Array ModuleInfo := #[
-  ModuleInfo.mk "Mathlib"  "mathlib/src",
-  ModuleInfo.mk "Lean3Lib" "lean3/library",
-  ModuleInfo.mk "Lean3Pkg" "lean3/leanpkg"
+  ModuleInfo.mk "Mathlib"  "../mathlib3/src",
+  ModuleInfo.mk "Lean3Lib" "../lean3/library",
+  ModuleInfo.mk "Lean3Pkg" "../lean3/leanpkg"
 ]
 
-def Lib4Path : String := "Lib4"
+def Lib4Path : FilePath := "Lib4"
 
-def Lean4LibPath : String := "lean4/build/release/stage1/lib/lean"
+def Lean4LibPath : FilePath := "../lean4/build/release/stage1/lib/lean"
 -------------------------------
 -- END CONFIG
 -------------------------------
 
-def Path34.toLean3 (p : Path34) (suffix : String) : String :=
-  System.mkFilePath [p.modInfo.l3path, p.mrpath.path] ++ suffix
+def Path34.toLean3 (p : Path34) (suffix : String) : FilePath :=
+  (p.modInfo.l3path.join p.mrpath.path).withExtension suffix
 
-def Path34.toTLean (p : Path34) : String :=
-  p.toLean3 ".tlean"
+def Path34.toTLean (p : Path34) : FilePath :=
+  p.toLean3 "tlean"
 
 def Path34.toLean4dot (p : Path34) : String :=
-  ".".intercalate [p.modInfo.l4name, p.mrpath.toDotPath.path]
+  ".".intercalate [p.modInfo.l4name.toString, p.mrpath.toDotPath.path]
 
-def Path34.toLean4path (p : Path34) (suffix : String) : String :=
-  System.mkFilePath [Lib4Path, p.modInfo.l4name, p.mrpath.path] ++ suffix
+def Path34.toLean4path (p : Path34) (suffix : String) : FilePath :=
+  ((Lib4Path.join p.modInfo.l4name).join p.mrpath.path).withExtension suffix
 
-def Path34.toLean4olean (p : Path34) : String := p.toLean4path ".olean"
-
-def Path34.toLean4autolean (p : Path34) : String := p.toLean4path "_auto.lean"
+def Path34.toLean4olean (p : Path34) : FilePath := 
+  p.toLean4path "olean"
 
 def resolveDotPath (dotPath : DotPath) : IO Path34 := do
   let mrp : ModRelPath := dotPath.toModRelPath
   for modInfo in MODULES do
     let p34 := Path34.mk modInfo mrp
-    if ← IO.fileExists p34.toTLean then return p34
-    let p34 := Path34.mk modInfo $ ⟨mrp.path ++ "/default"⟩
-    if ← IO.fileExists p34.toTLean then return p34
+    if ← p34.toTLean.pathExists then return p34
+    let p34 := Path34.mk modInfo $ ⟨mrp.path.join "default"⟩
+    if ← p34.toTLean.pathExists then return p34
   throw $ IO.userError s!"[resolveImport3] failed to resolve '{mrp.path}'"
 
 end MathPort

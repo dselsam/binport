@@ -9,6 +9,7 @@ import MathPort.ActionItem
 import MathPort.Rules
 import MathPort.Translate
 import MathPort.OldRecursor
+import MathPort.InsertSorries
 import Lean
 
 namespace MathPort
@@ -24,13 +25,9 @@ def shouldGenCodeFor (d : Declaration) : Bool :=
 
 def addDeclLoud (n : Name) (d : Declaration) : PortM Unit := do
   let path := (← read).path
-  println! "[addDecl] START {path.mrpath.path} {n}"
-  if n == `module.End.eigenvectors_linear_independent then
-    match d with
-    | Declaration.thmDecl d => println! "[fail] {d.type} \n\n\n\n{d.value}"
-    | _ => pure ()
+  printlnf! "[addDecl] START {path.mrpath.path} {n}"
   addDecl d
-  println! "[addDecl] END   {path.mrpath.path} {n}"
+  printlnf! "[addDecl] END   {path.mrpath.path} {n}"
   if shouldGenCodeFor d then
     match (← getEnv).compileDecl {} d with
     | Except.ok env    => println! "[compile] {n} SUCCESS!"
@@ -72,7 +69,7 @@ def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : P
 
   let nextIdx : Nat ← (← get).nNotations
   modify λ s => { s with nNotations := nextIdx + 1 }
-  let ns : Syntax := mkIdent $ s!"{(← read).path.mrpath.toUnderscorePath}_{nextIdx}"
+  let ns : Syntax := mkIdent $ s!"{" ".intercalate (← read).path.mrpath.path.components}_{nextIdx}"
   let stx ← `(namespace $ns:ident $stx end $ns:ident)
   elabCommand stx
 
@@ -103,7 +100,8 @@ def isBadSUnfold (n : Name) : PortM Bool := do
 def processActionItem (actionItem : ActionItem) : PortM Unit := do
   modify λ s => { s with decl := actionItem.toDecl }
   let s ← get
-  let f n := translateName s (← getEnv) n
+  let env ← getEnv
+  let f n := translateName s env n
 
   match actionItem with
   | ActionItem.export d => do
@@ -190,6 +188,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       maybeRegisterEquation thm.name
 
       if s.sorries.contains thm.name ∨ (¬ (← read).proofs ∧ ¬ s.neverSorries.contains thm.name) then
+        printlnf! "sorry skipping: {thm.name}"
         addDeclLoud thm.name $ Declaration.axiomDecl {
           thm with
             name     := name,
@@ -212,8 +211,13 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       if s.ignored.contains defn.name then return ()
       if ← isBadSUnfold name then return ()
 
-      let value ← translate defn.value
+      let mut value ← translate defn.value
       let env ← getEnv
+
+      if s.sorries.contains defn.name ∨ (¬ (← read).proofs ∧ ¬ s.neverSorries.contains defn.name) then
+        printlnf! "inserting sorries for: {defn.name}"
+        value ← liftMetaM $ insertSorries value
+
       addDeclLoud defn.name $ Declaration.defnDecl {
         defn with
           name  := name,
