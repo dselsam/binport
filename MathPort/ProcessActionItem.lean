@@ -165,6 +165,19 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     -- setEnv $ addProtected (← getEnv) (f n)
     pure ()
 
+  | ActionItem.position n line col => do
+      let n ← f n
+      let range ← DeclarationRanges.mk
+            { pos := { line := line, column := col }, 
+              charUtf16 := col, 
+              endPos := { line := line, column := col }, 
+              endCharUtf16 := col }
+            { pos := { line := line, column := col },
+              charUtf16 := col,
+              endPos := { line := line, column := col },
+              endCharUtf16 := col} 
+      Lean.addDeclarationRanges n range
+
   | ActionItem.decl d => do
     match d with
     | Declaration.axiomDecl ax => do

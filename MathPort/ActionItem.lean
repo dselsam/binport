@@ -70,6 +70,7 @@ inductive ActionItem : Type
 | «mixfix»       : MixfixKind → Name → Nat → String → ActionItem
 | «export»       : ExportDecl → ActionItem
 | «projection»   : ProjectionInfo → ActionItem
+| «position»     : (name : Name) → (line col : Nat) → ActionItem
 
 def ActionItem.toDecl : ActionItem → Name
   | ActionItem.decl d =>
@@ -84,6 +85,7 @@ def ActionItem.toDecl : ActionItem → Name
   | ActionItem.reducibility n _   => n
   | ActionItem.mixfix _ n _ _     => n
   | ActionItem.export _           => `inExport
-  | ActionItem.projection p        => p.projName
+  | ActionItem.projection p       => p.projName
+  | ActionItem.position n _ _     => n
 
 end MathPort
