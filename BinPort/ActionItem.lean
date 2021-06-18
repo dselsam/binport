@@ -3,13 +3,13 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam
 -/
-import MathPort.Util
-import MathPort.Path
+import BinPort.Util
+import BinPort.Path
 import Lean
 import Std.Data.HashSet
 import Std.Data.HashMap
 
-namespace MathPort
+namespace BinPort
 
 open Lean
 
@@ -86,4 +86,4 @@ def ActionItem.toDecl : ActionItem → Name
   | ActionItem.export _           => `inExport
   | ActionItem.projection p        => p.projName
 
-end MathPort
+end BinPort

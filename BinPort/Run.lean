@@ -3,11 +3,11 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam
 -/
-import MathPort.Basic
-import MathPort.Rules
-import MathPort.ParseExport
-import MathPort.ProcessActionItem
-import MathPort.Path
+import BinPort.Basic
+import BinPort.Rules
+import BinPort.ParseExport
+import BinPort.ProcessActionItem
+import BinPort.Path
 
 import Lean
 import Std.Data.HashMap
@@ -16,7 +16,7 @@ import Std.Data.HashSet
 open Lean Lean.Meta
 open Std (HashMap HashSet)
 
-namespace MathPort
+namespace BinPort
 namespace Run -- TODO: better name. runAll? schedule?
 
 abbrev Job := Task (Except IO.Error Unit)
@@ -112,4 +112,4 @@ unsafe def run (proofs : Bool) (target : Path34) : IO Unit := do
   | Except.error err => throw err
 
 
-end MathPort
+end BinPort

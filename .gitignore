@@ -1,6 +1,2 @@
 build
-lean3
-lean4
-mathport
-*.olean
-*.tlean
+binport

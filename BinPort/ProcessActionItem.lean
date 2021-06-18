@@ -3,16 +3,15 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam, Gabriel Ebner
 -/
-import MathPort.Util
-import MathPort.Basic
-import MathPort.ActionItem
-import MathPort.Rules
-import MathPort.Translate
-import MathPort.OldRecursor
-import MathPort.InsertSorries
+import BinPort.Util
+import BinPort.Basic
+import BinPort.ActionItem
+import BinPort.Rules
+import BinPort.Translate
+import BinPort.OldRecursor
 import Lean
 
-namespace MathPort
+namespace BinPort
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Command
 
@@ -214,10 +213,6 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       let mut value ← translate defn.value
       let env ← getEnv
 
-      if s.sorries.contains defn.name ∨ (¬ (← read).proofs ∧ ¬ s.neverSorries.contains defn.name) then
-        printlnf! "inserting sorries for: {defn.name}"
-        value ← liftMetaM $ insertSorries value
-
       addDeclLoud defn.name $ Declaration.defnDecl {
         defn with
           name  := name,
@@ -261,4 +256,4 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
     | _ => throwError (toString d.names)
 
-end MathPort
+end BinPort

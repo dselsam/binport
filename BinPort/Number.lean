@@ -6,14 +6,14 @@ Authors: Daniel Selsam
 These functions mimic the ones in lean3/src/library/num.cpp
 and must be called *before* translating the constants into Lean4.
 -/
-import MathPort.Util
-import MathPort.Basic
-import MathPort.ActionItem
-import MathPort.Rules
-import MathPort.OldRecursor
+import BinPort.Util
+import BinPort.Basic
+import BinPort.ActionItem
+import BinPort.Rules
+import BinPort.OldRecursor
 import Lean
 
-namespace MathPort
+namespace BinPort
 
 open Lean
 
@@ -61,4 +61,4 @@ partial def isNumber? (e : Expr) : Option NumInfo := do
              hasAdd? := info.hasAdd? <|> e.getArg! 2 }
   else none
 
-end MathPort
+end BinPort

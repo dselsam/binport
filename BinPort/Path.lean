@@ -19,7 +19,7 @@ import Lean
 open Lean
 open System (FilePath)
 
-namespace MathPort
+namespace BinPort
 
 -- Example: data.nat.basic
 structure DotPath where
@@ -89,4 +89,4 @@ def resolveDotPath (dotPath : DotPath) : IO Path34 := do
     if ← p34.toTLean.pathExists then return p34
   throw $ IO.userError s!"[resolveImport3] failed to resolve '{mrp.path}'"
 
-end MathPort
+end BinPort
