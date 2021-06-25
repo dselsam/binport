@@ -173,18 +173,21 @@ align subtype.mk Subtype.mk
 align has_sizeof SizeOf
 align has_sizeof.mk SizeOf.mk
 
-noinst bool.decidable_eq
-noinst nat.decidable_eq
-noinst and.decidable
-noinst or.decidable
-noinst iff.decidable
-noinst not.decidable
-noinst implies.decidable
-noinst decidable.true
-noinst decidable.false
-noinst exists_prop_decidable
-noinst forall_prop_decidable
-noinst int.decidable_eq
+# TODO: we comment this out for now, since we are not writing
+# code in the same module that imports mathlib.
+
+# noinst bool.decidable_eq
+# noinst nat.decidable_eq
+# noinst and.decidable
+# noinst or.decidable
+# noinst iff.decidable
+# noinst not.decidable
+# noinst implies.decidable
+# noinst decidable.true
+# noinst decidable.false
+# noinst exists_prop_decidable
+# noinst forall_prop_decidable
+# noinst int.decidable_eq
 
 # TODO: currently, Mathlib's `<` on `Nat` differs from Lean4's
 # (and Mathlib's `<` is not being recognized as `decidable`)
@@ -192,7 +195,6 @@ noinst int.decidable_eq
 # noinst nat.decidable_le
 
 neversorry of_as_true
-
 
 #
 # Control
@@ -253,7 +255,7 @@ align has_one.mk Mathlib.HasOne.mk
 # Temporary sorries
 #
 
-sorry ring_aut.to_add_aut._proof_2
-sorry pi.complete_boolean_algebra
-sorry pi.complete_distrib_lattice
-sorry complete_boolean_algebra.to_complete_distrib_lattice
+# sorry ring_aut.to_add_aut._proof_2
+# sorry pi.complete_boolean_algebra
+# sorry pi.complete_distrib_lattice
+# sorry complete_boolean_algebra.to_complete_distrib_lattice
