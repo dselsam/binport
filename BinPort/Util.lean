@@ -105,7 +105,7 @@ variable [Monad m] [MonadLiftT IO m]
 
 @[inline]
 def forEachLine (fileName : String) (f : String → m Unit) : m Unit :=
-  IO.FS.withFile fileName IO.FS.Mode.read fun h => do
+  Handle.mk fileName IO.FS.Mode.read >>= fun h => do
     while (not (← h.isEof)) do
       let line := (← h.getLine).dropRightWhile λ c => c == '\n'
       if line == "" then continue else f line

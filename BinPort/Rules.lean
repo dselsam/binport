@@ -15,7 +15,7 @@ open Lean
 open Std (HashSet mkHashSet HashMap mkHashMap)
 
 def parseRules (rulesFilename : String) : PortM Unit :=
-  IO.FS.withFile rulesFilename IO.FS.Mode.read fun h => do
+  IO.FS.Handle.mk rulesFilename IO.FS.Mode.read >>= fun h => do
     while (not (← h.isEof)) do
       match (← h.getLine).trim.splitOn " " with
       | ("#" :: _)         => pure ()
