@@ -23,6 +23,7 @@ postport:
 	LEAN_PATH=$(LEAN4_PATH) time lean --o=$(LIB4)/PostPort/Coe.olean $(LIB4)/PostPort/Coe.lean
 	LEAN_PATH=$(LEAN4_PATH) time lean --o=$(LIB4)/PostPort/Pow.olean $(LIB4)/PostPort/Pow.lean
 	LEAN_PATH=$(LEAN4_PATH) time lean --o=$(LIB4)/PostPort.olean $(LIB4)/PostPort.lean
+	LEAN_PATH=$(LEAN4_PATH) time lean --o=$(LIB4)/Mathlib.olean $(LIB4)/Mathlib.lean
 
 portLean3: preport
 	LEAN_PATH=$(LEAN4_PATH) time ./$(BinPortEXE) 1 lean3
