@@ -57,7 +57,7 @@ constant withImportModulesConst {α : Type} (imports : List Import) (opts : Opti
   throw $ IO.userError "NYI"
 
 def genOLeanFor (proofs : Bool) (target : Path34) : IO Unit := do
-  println! s!"[genOLeanFor] START {target.mrpath.path}"
+  println! s!"\n[genOLeanFor] START {target.mrpath.path}\n"
   createDirectoriesIfNotExists target.toLean4olean.toString
 
   let imports : List Import := [{ module := `Init : Import }, { module := `PrePort : Import }]
@@ -81,7 +81,7 @@ def genOLeanFor (proofs : Bool) (target : Path34) : IO Unit := do
 
       let env ← getEnv
       writeModule env target.toLean4olean
-      println! s!"[genOLeanFor] END   {target.mrpath.path}"
+      println! s!"\n[genOLeanFor] END   {target.mrpath.path}\n"
     pure ()
 
 partial def visit (target : Path34) : RunM Job := do
