@@ -12,7 +12,7 @@ binport: $(BIN_OUT)/test
 	cp $(BIN_OUT)/test $(BinPortEXE)
 
 $(BIN_OUT)/test: $(LIB_OUT)/libBinPort.a $(CPP_OBJS) | $(BIN_OUT)
-	c++ -rdynamic -o $@ $^ `leanc -print-ldflags`
+	c++ -rdynamic -o $@ $^ `leanc --print-ldflags`
 
 # TODO: make these packages
 preport:
