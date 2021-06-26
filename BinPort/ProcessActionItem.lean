@@ -68,7 +68,7 @@ def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : P
 
   let nextIdx : Nat ← (← get).nNotations
   modify λ s => { s with nNotations := nextIdx + 1 }
-  let ns : Syntax := mkIdent $ s!"{" ".intercalate (← read).path.mrpath.path.components}_{nextIdx}"
+  let ns : Syntax := mkIdent $ s!"{"__".intercalate (← read).path.mrpath.path.components}_{nextIdx}"
   let stx ← `(namespace $ns:ident $stx end $ns:ident)
   elabCommand stx
 
