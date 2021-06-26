@@ -47,10 +47,14 @@ private def parseHints (s : String) : PortM ReducibilityHints := do
   | "A" => ReducibilityHints.abbrev
   | "O" => ReducibilityHints.opaque
   | _   =>
-    let n ← parseNat s
-    if h : n < UInt32.size then
-      ReducibilityHints.regular ⟨⟨n, h⟩⟩
-    else throwError s!"Reducibility hint too large {n}"
+    match s.splitOn "." with
+    | [height, selfOpt] =>
+      let height ← parseNat height
+      let selfOpt ← parseBool selfOpt
+      if h : height < UInt32.size then
+        ReducibilityHints.regular ⟨⟨height, h⟩⟩ selfOpt
+      else throwError s!"Reducibility hint too large {height}"
+    | _ => throwError s!"failed to parse reducibility hint: {s}"
 
 private def parseMixfixKind (kind : String) : PortM MixfixKind :=
   match kind with
