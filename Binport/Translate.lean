@@ -3,14 +3,14 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam
 -/
-import BinPort.Util
-import BinPort.Basic
-import BinPort.ActionItem
-import BinPort.OldRecursor
-import BinPort.Number
+import Binport.Util
+import Binport.Basic
+import Binport.ActionItem
+import Binport.OldRecursor
+import Binport.Number
 import Lean
 
-namespace BinPort
+namespace Binport
 open Lean
 
 -- TODO: put somewhere else or don't call it State
@@ -85,4 +85,4 @@ def translate (e : Expr) : PortM Expr := do
         TransformStep.visit e
 
 
-end BinPort
+end Binport

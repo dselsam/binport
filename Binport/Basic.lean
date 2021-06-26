@@ -3,13 +3,13 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam
 -/
-import BinPort.Util
-import BinPort.Path
+import Binport.Util
+import Binport.Path
 import Lean
 import Std.Data.HashSet
 import Std.Data.HashMap
 
-namespace BinPort
+namespace Binport
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Command
 open Std (HashSet mkHashSet HashMap mkHashMap)
@@ -71,4 +71,4 @@ def PortM.toIO (x : PortM α) (ctx : Context) (env : Environment) : IO α := do
 
 def mkOldRecName (n : Name) : Name := n ++ "_oldrec"
 
-end BinPort
+end Binport

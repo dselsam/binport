@@ -3,10 +3,10 @@ Copyright (c) 2020 Gabriel Ebner. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Gabriel Ebner
 -/
-import BinPort.Util
+import Binport.Util
 import Lean
 
-namespace BinPort
+namespace Binport
 
 open Lean Lean.Meta
 
@@ -44,4 +44,4 @@ def mkOldRecursor (indTy oldRecName : Name) : MetaM (Option Declaration) := do
             hints       := ReducibilityHints.abbrev,
         }
 
-end BinPort
+end Binport

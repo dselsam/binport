@@ -3,15 +3,15 @@ Copyright (c) 2020 Microsoft Corporation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Daniel Selsam, Gabriel Ebner
 -/
-import BinPort.Util
-import BinPort.Basic
-import BinPort.ActionItem
-import BinPort.Rules
-import BinPort.Translate
-import BinPort.OldRecursor
+import Binport.Util
+import Binport.Basic
+import Binport.ActionItem
+import Binport.Rules
+import Binport.Translate
+import Binport.OldRecursor
 import Lean
 
-namespace BinPort
+namespace Binport
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Command
 
@@ -256,4 +256,4 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
 
     | _ => throwError (toString d.names)
 
-end BinPort
+end Binport
