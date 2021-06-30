@@ -49,7 +49,7 @@ abbrev MetaCheckExperimentM := ReaderT Context (StateRefT State MetaM)
 def emit (datapoint : DataPoint) : MetaCheckExperimentM Unit :=
   modify fun s => { s with datapoints := s.datapoints.push datapoint }
 
-def checkTypeValue (declName : Name) (type value : Expr) : MetaCheckExperimentM Unit := withTransparency TransparencyMode.all $ do
+def checkTypeValue (declName : Name) (type value : Expr) : MetaCheckExperimentM Unit := do
   try
     let typeType ← inferType type -- (sanity test)
     let valueType ← inferType value
@@ -59,7 +59,7 @@ def checkTypeValue (declName : Name) (type value : Expr) : MetaCheckExperimentM 
     | false => emit { declName := declName, result := MetaCheckResult.failed }
   catch ex =>
     let msg ← ex.toMessageData.toString
-    println! "[warn:isDefEq] {msg}"
+    println! "[warn:checkTypeValue:{declName}] {msg}"
     emit { declName := declName, result := MetaCheckResult.other }
 
 def checkConstant (env : Environment) (opts : Options) (cinfo : ConstantInfo) : IO (Array DataPoint) := do
@@ -105,18 +105,20 @@ end MetaCheckExperiment
 open MetaCheckExperiment
 
 unsafe def withEnvOpts {α : Type} (f : Environment → Options → IO α) : IO α := do
-  initSearchPath s!"../../lean4/build/release/stage1/lib/lean:../../Lib4"
+  let imports := [{ module := `Init : Import }, { module := `Mathlib : Import }]
+  let some LEAN_PATH ← IO.getEnv "LEAN_PATH" | throw (IO.userError "LEAN_PATH not set")
+  initSearchPath LEAN_PATH
 
   let opts : Options := {}
-  -- let opts : Options := opts.insert `maxHeartbeats (DataValue.ofNat 1000)
-  -- let opts : Options := opts.insert `synthInstance.maxHeartbeats (DataValue.ofNat 50000)
+  let opts : Options := opts.setNat `maxHeartbeats 100000
+  let opts : Options := opts.setNat `synthInstance.maxHeartbeats 50000
 
   let imports : List Import := [
-    { module := `Init : Import },
-    { module := `PrePort : Import },
+    -- { module := `Init : Import },
+    -- { module := `PrePort : Import },
     -- { module := `Lean3Lib.init.data.nat.basic : Import },
-    { module := `Mathlib.all : Import },
-    { module := `PostPort : Import }
+    { module := `Mathlib : Import }
+    -- { module := `PostPort : Import }
   ]
 
   withImportModules imports (opts := opts) (trustLevel := 0) fun env => f env opts

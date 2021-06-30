@@ -1,11 +1,12 @@
 PKG = MetaCheck
-include ../../lean4/build/release/stage1/share/lean/lean.mk
-all: metaCheck
+include $(LEAN4_S1_MK)
+all: metacheck
 
-MetaCheckEXE=metaCheck
+MetaCheckEXE=metacheck
+LEAN4_PATH=$(LEAN4_S1_LIB)
 
-metaCheck: $(BIN_OUT)/test
+metacheck: $(BIN_OUT)/test
 	cp $(BIN_OUT)/test $(MetaCheckEXE)
 
 $(BIN_OUT)/test: $(LIB_OUT)/libMetaCheck.a $(CPP_OBJS) | $(BIN_OUT)
-	c++ -rdynamic -o $@ $^ `leanc -print-ldflags`
+	c++ -rdynamic -o $@ $^ `leanc --print-ldflags`

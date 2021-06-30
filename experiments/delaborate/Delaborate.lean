@@ -80,15 +80,15 @@ def checkExpr (declName : Name) (levelNames : List Name) (inType : Bool) (e : Ex
     | ElabResult.errors errs =>
       let f' ← PrettyPrinter.ppTerm stx
       let s := f'.pretty'
-      println! "[warn:elab:{declName}]\nSyntax:\n{s}\n"
-      for err in errs do println! "[warn:elab:{declName}] {← err.data.toString}"
+      -- println! "[warn:elab:{declName}]\nSyntax:\n{s}\n"
+      -- for err in errs do println! "[warn:elab:{declName}] {← err.data.toString}"
       emit { declName := declName, inType := inType, result := DelaborateResult.failedToElaborate }
     | ElabResult.term e' => do
       match ← isDefEq e e' with
       | true  => emit { declName := declName, inType := inType, result := DelaborateResult.success }
       | false => emit { declName := declName, inType := inType, result := DelaborateResult.nonDefEq }
   } catch ex => {
-    println! "[warn:other:{declName}] {← ex.toMessageData.toString}";
+    -- println! "[warn:other:{declName}] {← ex.toMessageData.toString}";
     emit { declName := declName, inType := inType, result := DelaborateResult.other }
   }
 
@@ -118,7 +118,7 @@ def runDelaborateExperiment (env : Environment) (opts : Options) : IO Unit := do
       i := i + 1
       match ← IO.wait job with
       | Except.ok datapoints => dumpResults handle datapoints
-      | Except.error err => println! "[warn:task] {err}"
+      | Except.error err => pure () -- println! "[warn:task] {err}"
 
   where
     collectJobs (jobs : Array (Name × Job)) (name : Name) (cinfo : ConstantInfo) : IO (Array (Name × Job)) := do
@@ -138,7 +138,9 @@ end DelaborateExperiment
 open DelaborateExperiment
 
 unsafe def withEnvOpts {α : Type} (f : Environment → Options → IO α) : IO α := do
-  initSearchPath s!"../../lean4/build/release/stage1/lib/lean:../../Lib4"
+  let imports := [{ module := `Init : Import }, { module := `Mathlib : Import }]
+  let some LEAN_PATH ← IO.getEnv "LEAN_PATH" | throw (IO.userError "LEAN_PATH not set")
+  initSearchPath LEAN_PATH
 
   let opts : Options := {}
   let opts : Options := opts.insert `pp.all (DataValue.ofBool true)
@@ -147,9 +149,9 @@ unsafe def withEnvOpts {α : Type} (f : Environment → Options → IO α) : IO 
 
   let imports : List Import := [
     { module := `Init : Import },
-    { module := `PrePort : Import },
-    { module := `Lean3Lib.all : Import }
---    { module := `Mathlib.all : Import },
+--    { module := `PrePort : Import },
+--    { module := `Lean3Lib.all : Import }
+    { module := `Mathlib : Import }
 --    { module := `PostPort : Import }
   ]
 
