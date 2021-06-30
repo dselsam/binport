@@ -37,6 +37,9 @@ def Lean.Expr.replaceConstNames (f : Name → Name) (e : Expr) : Expr :=
     | e@(const n us _) =>
       if f n == n then none else
         some (mkConst (f n) us)
+    | e@(proj n idx t _) =>
+      if f n == n then none else
+        some (mkProj (f n) idx t)
     | _ => none
   x
 

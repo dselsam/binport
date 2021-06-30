@@ -35,7 +35,7 @@ structure State extends ExportInfo, Rules where
   irreducibles   : HashSet Name             := {}
   nNotations     : Nat                      := 0
   name2equations : HashMap Name (List Name) := {}
-
+  ind2params     : HashMap Name Nat         := {}
 
 abbrev PortM := ReaderT Context $ StateRefT State CommandElabM
 
