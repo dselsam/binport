@@ -28,7 +28,7 @@ namespace Mathlib
 class HasZero (α : Type u) := (zero : α)
 class HasOne  (α : Type u) := (one : α)
 
-universes u
+universe u
 variable {α : Type u} [HasZero α] [HasOne α] [Add α] [Inhabited α]
 
 def bit0 (x : α) : α := x + x
