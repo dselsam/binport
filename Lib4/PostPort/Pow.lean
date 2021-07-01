@@ -7,7 +7,7 @@ import Lean3Lib.init.core
 
 namespace Mathlib
 
-universes u v
+universe u v
 variable {α : Type u} {β : Type v}
 
 noncomputable instance [has_pow α β] : HPow α β α := ⟨pow⟩

@@ -1,6 +1,6 @@
 import Lean3Lib.init.coe
 
-universes u v
+universe u v
 variable {α : Sort u} {β : Sort v}
 
 noncomputable instance hasCoe [inst : Mathlib.has_coe α β] : Coe α β := {

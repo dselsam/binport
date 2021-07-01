@@ -23,6 +23,7 @@ unsafe def main (args : List String) : IO Unit := do
     | "lean3"   => Binport.run proofs $ Path34.mk MODULES[1] ⟨"all"⟩
     | "mathlib" => Binport.run proofs $ Path34.mk MODULES[0] ⟨"all"⟩
     | "nullstellensatz" => Binport.run proofs $ Path34.mk MODULES[0] ⟨"ring_theory/nullstellensatz"⟩
+    | "bounded" => Binport.run proofs $ Path34.mk MODULES[0] ⟨"topology/continuous_function/bounded_mini2"⟩
     | "prime" => Binport.run proofs $ Path34.mk MODULES[0] ⟨"data/nat/prime"⟩
     | _         => throw $ IO.userError "Second argument <lib> must be 'lean3' or 'mathlib'"
   | _ => throw $ IO.userError "Expected <proof> <lib>"

@@ -34,5 +34,8 @@ portMathlib: preport
 portNullstellensatz: preport
 	LEAN_PATH=$(LEAN4_PATH) time ./$(BinportEXE) 1 nullstellensatz
 
+portBounded: preport
+	LEAN_PATH=$(LEAN4_PATH) time ./$(BinportEXE) 0 bounded
+
 portPrime: preport
 	LEAN_PATH=$(LEAN4_PATH) time ./$(BinportEXE) 1 prime
