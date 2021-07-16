@@ -8,6 +8,7 @@ import Binport.Basic
 import Binport.ActionItem
 import Binport.OldRecursor
 import Binport.Number
+import Binport.Reduce
 import Lean
 
 namespace Binport
@@ -45,7 +46,12 @@ def translate (e : Expr) (reduce : Bool := true) : PortM Expr := do
   let e := e.replaceConstNames (translateName s (← getEnv))
   let e ← liftMetaM $ Meta.transform e (pre := translateNumbers s)
   let e ← liftMetaM $ Meta.transform e (pre := translateAutoParams s)
-  let e ← if reduce then liftMetaM (Meta.withTransparency Meta.TransparencyMode.instances (Meta.reduce e)) else e
+  let e ←
+    if reduce then
+      liftMetaM $ Meta.withTransparency Meta.TransparencyMode.instances $
+        try Binport.reduce e (explicitOnly := false) (skipTypes := false) (skipProofs := false)
+        catch ex => println! "[reduce] {← ex.toMessageData.toString}\n\n{e}"; throw ex
+    else e
   e
 
   where

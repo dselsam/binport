@@ -27,7 +27,7 @@ def addDeclLoud (n : Name) (d : Declaration) : PortM Unit := do
   printlnf! "[addDecl] START {path.mrpath.path} {n}"
   addDecl d
   printlnf! "[addDecl] END   {path.mrpath.path} {n}"
-  if shouldGenCodeFor d then
+  if false && shouldGenCodeFor d then
     match (← getEnv).compileDecl {} d with
     | Except.ok env    => println! "[compile] {n} SUCCESS!"
                           setEnv env
