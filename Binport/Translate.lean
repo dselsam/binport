@@ -37,26 +37,23 @@ partial def translateName (s : State) (env : Environment) (n : Name) : Name := d
   where
     dflt n := `Mathlib ++ n
 
-def doubleCheck (e e' : Expr) : MetaM TransformStep := do
+def doubleCheck (e e' : Expr) (msg : String) : MetaM TransformStep := do
   if (← Meta.isDefEq e e') then TransformStep.done e'
-  else throwError "[translateNumber] broke def-eq, \n{e}\n\n!=\n\n{e'}"
+  else throwError "[{msg}] broke def-eq, \n{e}\n\n!=\n\n{e'}"
 
 def translate (e : Expr) (reduce : Bool := true) : PortM Expr := do
   let s ← get
   let e := e.replaceConstNames (translateName s (← getEnv))
   let e ← liftMetaM $ Meta.transform e (pre := translateNumbers s)
   let e ← liftMetaM $ Meta.transform e (pre := translateAutoParams s)
+
   let heartbeats ← IO.getNumHeartbeats (ε := Exception)
-  let opts := (← getOptions).setNat `maxHeartbeats 1000000 |>.setNat `synthInstance.maxHeartbeats 50000
-  let e ←
-    if reduce then liftMetaM $
-      withTheReader Core.Context (fun ctx => { options := opts, initHeartbeats := heartbeats }) $
-        Meta.withTransparency Meta.TransparencyMode.instances $
-          try Binport.reduce e (explicitOnly := false) (skipTypes := false) (skipProofs := false)
-        catch ex =>
-          println! "[warn.reduce] {← ex.toMessageData.toString}\n\n{e}"
-          e
-    else e
+  let maxHeartbeats := 1000000000
+  let opts := (← getOptions).setNat `maxHeartbeats maxHeartbeats |>.setNat `synthInstance.maxHeartbeats 50000
+  let e ← liftMetaM $
+    withTheReader Core.Context (fun ctx => { ctx with initHeartbeats := heartbeats, options := opts, maxHeartbeats := maxHeartbeats }) $
+      try Meta.transform e (pre := reduceProjections s)
+      catch ex => println! "[warn.reduce] {← ex.toMessageData.toString}"; e
   e
 
   where
@@ -71,6 +68,20 @@ def translate (e : Expr) (reduce : Bool := true) : PortM Expr := do
           -- (current workaround is for the OfNat instances to `no_index` the numbers)
           let inst := mkAppN (mkConst `OfNat.mk [level]) #[type, mkNatLit n, e]
           TransformStep.done $ mkAppN (mkConst `OfNat.ofNat [level]) #[type, mkNatLit n, inst]
+
+    reduceProjections s e : MetaM TransformStep := do
+      let f := e.getAppFn
+      if !f.isConst then return TransformStep.visit e
+      match (← getEnv).getProjectionFnInfo? f.constName! with
+      | none          => return TransformStep.visit e
+      | some projInfo =>
+        if e.getAppNumArgs != projInfo.nparams + 1 then return TransformStep.visit e
+        if !projInfo.fromClass then return TransformStep.visit e
+        let self ← Meta.whnf e.getAppArgs[projInfo.nparams]
+        if !self.isAppOf projInfo.ctorName then return TransformStep.visit e
+        let field := self.getAppArgs[projInfo.nparams + projInfo.i]
+        discard $ doubleCheck e field "reduce"
+        return TransformStep.visit field
 
     translateAutoParams s e : MetaM TransformStep :=
       -- def auto_param : Sort u → name → Sort u :=
