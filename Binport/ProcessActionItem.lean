@@ -100,7 +100,8 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
   modify λ s => { s with decl := actionItem.toDecl }
   let s ← get
   let env ← getEnv
-  let f n := translateName s env n
+  let f : Name → PortM Name :=
+    fun n => do translateName s (← getEnv) n
 
   match actionItem with
   | ActionItem.export d => do
@@ -115,34 +116,34 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     else
       let mut env ← getEnv
       for (n1, n2) in d.renames do
-        println! "[alias] {f n1} short for {f n2}"
-        env := addAlias env (f n1) (f n2)
+        println! "[alias] {← f n1} short for {← f n2}"
+        env := addAlias env (← f n1) (← f n2)
       setEnv env
 
   | ActionItem.mixfix kind n prec tok =>
     println! "[mixfix] {kind} {tok} {prec} {n}"
-    processMixfix kind (f n) prec tok
+    processMixfix kind (← f n) prec tok
 
   | ActionItem.simp n prio => do
-    tryAddSimpLemma (f n) prio
+    tryAddSimpLemma (← f n) prio
     for eqn in (← get).name2equations.findD n [] do
-      tryAddSimpLemma (f eqn) prio
+      tryAddSimpLemma (← f eqn) prio
 
   | ActionItem.reducibility n kind => do
     -- (note: this will fail if it declares reducible in a new module)
     println! "reducibility {n} {repr kind}"
-    try setAttr { name := reducibilityToName kind } (f n)
+    try setAttr { name := reducibilityToName kind } (← f n)
     catch ex => warn ex
 
   | ActionItem.projection proj => do
     println! "[projection] {reprStr proj}"
-    setEnv $ addProjectionFnInfo (← getEnv) (f proj.projName) (f proj.ctorName) proj.nParams proj.index proj.fromClass
+    setEnv $ addProjectionFnInfo (← getEnv) (← f proj.projName) (← f proj.ctorName) proj.nParams proj.index proj.fromClass
 
   | ActionItem.class n => do
     let env ← getEnv
     if s.ignored.contains n then return ()
     -- for meta classes, Lean4 won't know about the decl
-    match addClass env (f n) with
+    match addClass env (← f n) with
     | Except.error msg => warnStr msg
     | Except.ok env    => setEnv env
 
@@ -152,8 +153,8 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
     -- this is currently needed because Decidable instances aren't getting compiled!
     match (← get).noInsts.find? ni with
     | some _ => println! "[skipInstance] {ni}"
-    | none   => try liftMetaM $ addInstance (f ni) AttributeKind.global prio
-                    setAttr { name := `inferTCGoalsRL } (f ni)
+    | none   => try liftMetaM $ addInstance (← f ni) AttributeKind.global prio
+                    setAttr { name := `inferTCGoalsRL } (← f ni)
                 catch ex => warn ex
 
   | ActionItem.private _ _ => pure ()
@@ -167,7 +168,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
   | ActionItem.decl d => do
     match d with
     | Declaration.axiomDecl ax => do
-      let name := f ax.name
+      let name ← f ax.name
       let type ← translate ax.type
 
       if s.ignored.contains ax.name then return ()
@@ -180,7 +181,7 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       }
 
     | Declaration.thmDecl thm => do
-      let name := f thm.name
+      let name ← f thm.name
       let type ← translate thm.type
 
       if s.ignored.contains thm.name then return ()
@@ -204,14 +205,13 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
         }
 
     | Declaration.defnDecl defn => do
-      let name := f defn.name
+      let name ← f defn.name
       let type ← translate defn.type
 
       if s.ignored.contains defn.name then return ()
       if ← isBadSUnfold name then return ()
 
       let mut value ← translate defn.value
-      let env ← getEnv
 
       addDeclLoud defn.name $ Declaration.defnDecl {
         defn with
@@ -222,14 +222,14 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
       }
 
     | Declaration.inductDecl lps nps [ind] iu => do
-      let name := f ind.name
-      let type ← translate ind.type
+      let name ← f ind.name
+      let type ← translate ind.type (reduce := false)
 
       if not (s.ignored.contains ind.name) then
         -- TODO: why do I need this nested do? Because of the scope?
         let ctors ← ind.ctors.mapM fun (ctor : Constructor) => do
-          let cname := f ctor.name
-          let ctype ← translate ctor.type
+          let cname ← f ctor.name
+          let ctype ← translate ctor.type (reduce := false)
           pure { ctor with name := cname, type := ctype }
         addDeclLoud ind.name $ Declaration.inductDecl lps nps
           [{ ind with name := name, type := type, ctors := ctors }] iu
@@ -246,8 +246,8 @@ def processActionItem (actionItem : ActionItem) : PortM Unit := do
           mkBInductionOn name
         catch _ => pure ()
 
-      let oldRecName := mkOldRecName (f ind.name)
-      let oldRec ← liftMetaM $ mkOldRecursor (f ind.name) oldRecName
+      let oldRecName := mkOldRecName (← f ind.name)
+      let oldRec ← liftMetaM $ mkOldRecursor (← f ind.name) oldRecName
       match oldRec with
       | some oldRec => do
         addDeclLoud oldRecName oldRec

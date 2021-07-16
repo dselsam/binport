@@ -131,8 +131,9 @@ def processLine (line : String) : PortM (List ActionItem) := do
 
       | ("#DEF" :: n :: thm :: h :: t :: v :: ups) =>
         let (n, h, t, v, ups) ← ((← str2name n), (← parseHints h), (← str2expr t), (← str2expr v), (← ups.mapM str2name))
-        let thm := (← parseNat thm) > 0
-        if thm then
+        let thm ← parseNat thm
+        -- TODO: why can't I synthesize `thm > 0` any more?
+        if Nat.ble 1 thm then
           pure [ActionItem.decl $ Declaration.thmDecl {
             name        := n,
             levelParams := ups,
