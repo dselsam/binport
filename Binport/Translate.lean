@@ -46,11 +46,16 @@ def translate (e : Expr) (reduce : Bool := true) : PortM Expr := do
   let e := e.replaceConstNames (translateName s (← getEnv))
   let e ← liftMetaM $ Meta.transform e (pre := translateNumbers s)
   let e ← liftMetaM $ Meta.transform e (pre := translateAutoParams s)
+  let heartbeats ← IO.getNumHeartbeats (ε := Exception)
+  let opts := (← getOptions).setNat `maxHeartbeats 1000000 |>.setNat `synthInstance.maxHeartbeats 50000
   let e ←
-    if reduce then
-      liftMetaM $ Meta.withTransparency Meta.TransparencyMode.instances $
-        try Binport.reduce e (explicitOnly := false) (skipTypes := false) (skipProofs := false)
-        catch ex => println! "[reduce] {← ex.toMessageData.toString}\n\n{e}"; throw ex
+    if reduce then liftMetaM $
+      withTheReader Core.Context (fun ctx => { options := opts, initHeartbeats := heartbeats }) $
+        Meta.withTransparency Meta.TransparencyMode.instances $
+          try Binport.reduce e (explicitOnly := false) (skipTypes := false) (skipProofs := false)
+        catch ex =>
+          println! "[warn.reduce] {← ex.toMessageData.toString}\n\n{e}"
+          e
     else e
   e
 
