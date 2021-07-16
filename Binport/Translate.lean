@@ -40,11 +40,12 @@ def doubleCheck (e e' : Expr) : MetaM TransformStep := do
   if (← Meta.isDefEq e e') then TransformStep.done e'
   else throwError "[translateNumber] broke def-eq, \n{e}\n\n!=\n\n{e'}"
 
-def translate (e : Expr) : PortM Expr := do
+def translate (e : Expr) (reduce : Bool := true) : PortM Expr := do
   let s ← get
   let e := e.replaceConstNames (translateName s (← getEnv))
   let e ← liftMetaM $ Meta.transform e (pre := translateNumbers s)
   let e ← liftMetaM $ Meta.transform e (pre := translateAutoParams s)
+  let e ← if reduce then liftMetaM (Meta.withTransparency Meta.TransparencyMode.instances (Meta.reduce e)) else e
   e
 
   where
