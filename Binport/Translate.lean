@@ -52,8 +52,9 @@ def translate (e : Expr) (reduce : Bool := true) : PortM Expr := do
   let opts := (← getOptions).setNat `maxHeartbeats maxHeartbeats |>.setNat `synthInstance.maxHeartbeats 50000
   let e ← liftMetaM $
     withTheReader Core.Context (fun ctx => { ctx with initHeartbeats := heartbeats, options := opts, maxHeartbeats := maxHeartbeats }) $
-      try Meta.transform e (pre := reduceProjections s)
-      catch ex => println! "[warn.reduce] {← ex.toMessageData.toString}"; e
+      Meta.withTransparency Meta.TransparencyMode.instances $
+        try Meta.transform e (pre := reduceProjections s)
+        catch ex => println! "[warn.reduce] {← ex.toMessageData.toString}"; e
   e
 
   where
