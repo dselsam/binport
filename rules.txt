@@ -255,23 +255,23 @@ align has_one.mk Mathlib.HasOne.mk
 # Temporary sorries
 #
 
-sorry bounded_continuous_function.add_comm_group._proof_1
-sorry bounded_continuous_function.add_comm_group._proof_2
-sorry bounded_continuous_function.add_comm_group._proof_3
-sorry bounded_continuous_function.add_comm_group._proof_4
-sorry bounded_continuous_function.add_comm_group._proof_5
-sorry bounded_continuous_function.add_comm_group._proof_6
-sorry bounded_continuous_function.add_comm_group._proof_7
-sorry bounded_continuous_function.add_comm_group._proof_8
-sorry bounded_continuous_function.add_comm_group._proof_9
-sorry bounded_continuous_function.add_comm_group._proof_10
-sorry bounded_continuous_function.add_comm_group._proof_11
-sorry bounded_continuous_function.add_comm_group._proof_12
-sorry bounded_continuous_function.add_comm_group._proof_13
-sorry bounded_continuous_function.add_comm_group._proof_14
-sorry bounded_continuous_function.add_comm_group._proof_15
-sorry bounded_continuous_function.add_comm_group._proof_16
-sorry bounded_continuous_function.add_comm_group._proof_17
-sorry bounded_continuous_function.add_comm_group._proof_18
+# sorry bounded_continuous_function.add_comm_group._proof_1
+# sorry bounded_continuous_function.add_comm_group._proof_2
+# sorry bounded_continuous_function.add_comm_group._proof_3
+# sorry bounded_continuous_function.add_comm_group._proof_4
+# sorry bounded_continuous_function.add_comm_group._proof_5
+# sorry bounded_continuous_function.add_comm_group._proof_6
+# sorry bounded_continuous_function.add_comm_group._proof_7
+# sorry bounded_continuous_function.add_comm_group._proof_8
+# sorry bounded_continuous_function.add_comm_group._proof_9
+# sorry bounded_continuous_function.add_comm_group._proof_10
+# sorry bounded_continuous_function.add_comm_group._proof_11
+# sorry bounded_continuous_function.add_comm_group._proof_12
+# sorry bounded_continuous_function.add_comm_group._proof_13
+# sorry bounded_continuous_function.add_comm_group._proof_14
+# sorry bounded_continuous_function.add_comm_group._proof_15
+# sorry bounded_continuous_function.add_comm_group._proof_16
+# sorry bounded_continuous_function.add_comm_group._proof_17
+# sorry bounded_continuous_function.add_comm_group._proof_18
 
-sorry continuous_linear_map.comp_left_continuous_bounded._proof_3
+# sorry continuous_linear_map.comp_left_continuous_bounded._proof_3

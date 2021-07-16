@@ -95,7 +95,10 @@ partial def visit (target : Path34) : RunM Job := do
       let cjobs ← paths.mapM visit
       let ctx ← read
       let job : Job ← IO.asTask $ do
-        for cjob in cjobs do let _ ← IO.wait cjob
+        for cjob in cjobs do
+          match ← IO.wait cjob with
+          | Except.ok _ => pure ()
+          | Except.error err => throw err
         genOLeanFor ctx.proofs target
       modify λ s => { s with path2task := s.path2task.insert target.toTLean.toString job }
       pure job
