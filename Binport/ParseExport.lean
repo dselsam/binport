@@ -52,7 +52,7 @@ private def parseHints (s : String) : PortM ReducibilityHints := do
       let height ← parseNat height
       let selfOpt ← parseBool selfOpt
       if h : height < UInt32.size then
-        ReducibilityHints.regular ⟨⟨height, h⟩⟩ selfOpt
+        ReducibilityHints.regular ⟨⟨height, h⟩⟩
       else throwError s!"Reducibility hint too large {height}"
     | _ => throwError s!"failed to parse reducibility hint: {s}"
 

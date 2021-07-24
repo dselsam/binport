@@ -8,7 +8,6 @@ import Binport.Basic
 import Binport.ActionItem
 import Binport.OldRecursor
 import Binport.Number
-import Binport.Reduce
 import Lean
 
 namespace Binport

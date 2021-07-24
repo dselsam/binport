@@ -46,7 +46,7 @@ def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : P
   -- lower priority than the Lean4 ones.
   let prio : Nat := (← liftMacroM <| evalOptPrio none).pred
 
-  let stxPrec  : Option Syntax := Syntax.mkNumLit (toString prec)
+  let stxPrec  : Syntax := Syntax.mkNumLit (toString prec)
   let stxName  : Option Syntax := none
   let stxPrio  : Option Syntax := quote prio
   let stxOp    : Syntax := Syntax.mkStrLit tok
@@ -55,13 +55,13 @@ def processMixfix (kind : MixfixKind) (n : Name) (prec : Nat) (tok : String) : P
   let stx ←
     match kind with
     | MixfixKind.infixl =>
-      `(infixl $[: $stxPrec]? $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
+      `(infixl:$stxPrec $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
     | MixfixKind.infixr =>
-      `(infixr $[: $stxPrec]? $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
+      `(infixr:$stxPrec $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
     | MixfixKind.prefix =>
-      `(prefix $[: $stxPrec]? $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
+      `(prefix:$stxPrec $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
     | MixfixKind.postfix =>
-      `(postfix $[: $stxPrec]? $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
+      `(postfix:$stxPrec $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
     | MixfixKind.singleton =>
       let correctPrec : Option Syntax := Syntax.mkNumLit (toString Parser.maxPrec)
       `(notation $[: $correctPrec]? $[(name := $stxName)]? $[(priority := $stxPrio)]? $stxOp => $stxFun)
